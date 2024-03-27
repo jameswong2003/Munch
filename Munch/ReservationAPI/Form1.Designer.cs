@@ -97,9 +97,9 @@
             // 
             this.btnCreateRes.Location = new System.Drawing.Point(15, 219);
             this.btnCreateRes.Name = "btnCreateRes";
-            this.btnCreateRes.Size = new System.Drawing.Size(153, 23);
+            this.btnCreateRes.Size = new System.Drawing.Size(178, 23);
             this.btnCreateRes.TabIndex = 9;
-            this.btnCreateRes.Text = "Create Reservation";
+            this.btnCreateRes.Text = "Create Calendar Event";
             this.btnCreateRes.UseVisualStyleBackColor = true;
             this.btnCreateRes.Click += new System.EventHandler(this.btnCreateRes_Click);
             // 
@@ -139,7 +139,7 @@
             // 
             // btnFind
             // 
-            this.btnFind.Location = new System.Drawing.Point(351, 160);
+            this.btnFind.Location = new System.Drawing.Point(362, 160);
             this.btnFind.Name = "btnFind";
             this.btnFind.Size = new System.Drawing.Size(113, 43);
             this.btnFind.TabIndex = 14;
