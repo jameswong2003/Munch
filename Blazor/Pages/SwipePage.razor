@@ -1,0 +1,124 @@
+@page "/swipe"
+@using System.Net.Http
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
+@inject ILogger<SwipePage> Logger
+
+<h3>Swipe Through Options</h3>
+
+@if (businesses == null)
+{
+    <p>Loading...</p>
+}
+else if (!businesses.Any())
+{
+    <p>No businesses found.</p>
+}
+else
+{
+    <div>
+        <img src="@currentBusiness?.Image_Url" alt="Business Image" />
+        <h4>@currentBusiness?.Name</h4>
+        <p>@currentBusiness?.Phone</p>
+        <p>Rating: @currentBusiness?.Rating</p>
+        <button @onclick="@(e => SwipeBusiness("yes"))">Yes</button>
+        <button @onclick="@(e => SwipeBusiness("no"))">No</button>
+        <button @onclick="@(e => SwipeBusiness("maybe"))">Maybe</button>
+    </div>
+}
+
+@code {
+    private List<Business>? businesses;
+    private Business? currentBusiness;
+    private int currentIndex = 0;
+    private bool isLocationFetched = false;
+   protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isLocationFetched)
+        {
+            isLocationFetched = true; 
+            await FetchBusinesses();
+            SetCurrentBusiness();
+            StateHasChanged();
+        }
+    }
+
+    private async Task FetchBusinesses()
+    {
+        
+
+        Logger.LogInformation("Fetching businesses...");
+        try
+        {
+            var location = await JS.InvokeAsync<double[]>("getCoords");
+            var longitude = location[0];
+            varlatitude = location[1];
+
+            Logger.LogInformation($"User's location: Latitude {latitude}, Longitude {longitude}");
+
+            var httpClient = HttpClientFactory.CreateClient();
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "5NAk7jOvTY4PkS48eG69ZAo2tkAgg-vnxJFqKhrBT3BkP7qI-2MfKifiaD5UoBVMJDIsROjanPuvYPUsWK_l3CaztHfoQtCnFklxBt1DX-FNA3hL2WxuhSVYxxb_ZXYx");
+            var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?latitude={latitude}&longitude={longitude}");
+            var responseBody = await response.Content.ReadAsStringAsync(); 
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<YelpResponse>();
+                businesses = result?.Businesses;
+                Logger.LogInformation($"Fetched {businesses?.Count ?? 0} businesses successfully.");
+            }
+            else
+            {
+                Logger.LogWarning($"Failed to fetch businesses. Status code: {responseBody}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "An error occurred while fetching businesses.");
+        }
+
+        if (businesses != null && businesses.Any())
+        {
+            SetCurrentBusiness();
+        }
+    }
+
+    private void SetCurrentBusiness()
+    {
+        if (businesses != null && businesses.Any() && currentIndex < businesses.Count)
+        {
+            currentBusiness = businesses[currentIndex];
+        }
+    }
+
+    private void SwipeBusiness(string swipeResponse)
+    {
+        Logger.LogInformation($"Swiped {swipeResponse} on {currentBusiness?.Name}");
+
+        if (currentIndex < businesses?.Count - 1)
+        {
+            currentIndex++;
+            SetCurrentBusiness();
+        }
+        else
+        {
+            Logger.LogInformation("Reached the end of the list, resetting.");
+            currentIndex = 0;
+            SetCurrentBusiness();
+        }
+    }
+
+    private class Business
+    {
+        public string? Image_Url { get; set; }
+        public string? Name { get; set; }
+        public string? Phone { get; set; }
+        public double Rating { get; set; }
+    }
+
+    private class YelpResponse
+    {
+        public List<Business>? Businesses { get; set; }
+    }
+}

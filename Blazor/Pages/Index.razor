@@ -1,0 +1,30 @@
+﻿@page "/"
+@inject IJSRuntime JS
+
+<PageTitle>Index</PageTitle>
+
+<button @onclick="GetLocation">Get Location</button>
+
+@if(longitude == 0 && latitude == 0)
+{
+    <p>Press button to get location</p>
+}
+else
+{
+    <p>Longitude: @longitude</p>
+    <p>Latitude: @latitude</p>
+}
+
+
+
+@code 
+{
+    private double longitude;
+    private double latitude;
+    private async Task GetLocation()
+    {
+        var location = await JS.InvokeAsync<double[]>("getCoords");
+        longitude = location[0];
+        latitude = location[1];
+    }
+}

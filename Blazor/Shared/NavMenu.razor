@@ -1,0 +1,50 @@
+﻿<div class="top-row ps-3 navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Munch</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <NavLink class="nav-item px-3 nav-link" href="/" Match="NavLinkMatch.All">
+            <span class="oi oi-home" aria-hidden="true"></span> Home
+        </NavLink>
+        <NavLink class="nav-item px-3 nav-link" href="/profile">
+            <span class="oi oi-person" aria-hidden="true"></span> Profile
+        </NavLink>
+        <NavLink class="nav-item px-3 nav-link" href="/swipe">
+            <span class="oi oi-action-redo" aria-hidden="true"></span> Swipe
+        </NavLink>
+        <NavLink class="nav-item px-3 nav-link" href="/calendar">
+            <span class="oi oi-calendar" aria-hidden="true"></span> Calendar
+        </NavLink>
+        <NavLink class="nav-item px-3 nav-link" href="/trending">
+            <span class="oi oi-graph" aria-hidden="true"></span> Trending
+        </NavLink>
+        <NavLink class="nav-item px-3 nav-link" href="/contact">
+            <span class="oi oi-envelope-closed" aria-hidden="true"></span> Contact Us
+        </NavLink>
+        <div class="nav-item px-3 d-flex align-items-center justify-content-between">
+            <NavLink class="nav-link" href="/login">
+                <span class="oi oi-account-login" aria-hidden="true"></span> Login
+            </NavLink>
+            <NavLink class="nav-link" href="/signup">
+                <span class="oi oi-account-login" aria-hidden="true"></span> Sign Up
+            </NavLink>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}
