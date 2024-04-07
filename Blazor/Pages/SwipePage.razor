@@ -54,7 +54,7 @@ else
         {
             var location = await JS.InvokeAsync<double[]>("getCoords");
             var longitude = location[0];
-            varlatitude = location[1];
+            var latitude = location[1];
 
             Logger.LogInformation($"User's location: Latitude {latitude}, Longitude {longitude}");
 
