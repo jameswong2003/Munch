@@ -6,8 +6,6 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject ILogger<SwipePage> Logger
 
-<h3>Swipe Through Options</h3>
-
 @if (businesses == null)
 {
     <p>Loading...</p>
@@ -18,14 +16,16 @@ else if (!businesses.Any())
 }
 else
 {
-    <div>
-        <img src="@currentBusiness?.Image_Url" alt="Business Image" />
+    <div class="swipeContent">
+        <h3>Swipe Through Options</h3>
+
+        <img class="yelpImg" src="@currentBusiness?.Image_Url" alt="Business Image" />
         <h4>@currentBusiness?.Name</h4>
         <p>@currentBusiness?.Phone</p>
         <p>Rating: @currentBusiness?.Rating</p>
-        <button @onclick="@(e => SwipeBusiness("yes"))">Yes</button>
-        <button @onclick="@(e => SwipeBusiness("no"))">No</button>
-        <button @onclick="@(e => SwipeBusiness("maybe"))">Maybe</button>
+        <button class="yesBtn" @onclick="@(e => SwipeBusiness("yes"))">Yes</button>
+        <button class="noBtn" @onclick="@(e => SwipeBusiness("no"))">No</button>
+        <button class="maybeBtn" @onclick="@(e => SwipeBusiness("maybe"))">Maybe</button>
     </div>
 }
 
