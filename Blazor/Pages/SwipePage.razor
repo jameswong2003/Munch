@@ -6,8 +6,6 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject ILogger<SwipePage> Logger
 
-<h3>Swipe Through Options</h3>
-
 @if (businesses == null)
 {
     <p>Loading...</p>
@@ -18,14 +16,16 @@ else if (!businesses.Any())
 }
 else
 {
-    <div>
-        <img src="@currentBusiness?.Image_Url" alt="Business Image" />
+    <div class="swipeContent">
+        <h3>Swipe Through Options</h3>
+
+        <img class="yelpImg" src="@currentBusiness?.Image_Url" alt="Business Image" />
         <h4>@currentBusiness?.Name</h4>
         <p>@currentBusiness?.Phone</p>
         <p>Rating: @currentBusiness?.Rating</p>
-        <button @onclick="@(e => SwipeBusiness("yes"))">Yes</button>
-        <button @onclick="@(e => SwipeBusiness("no"))">No</button>
-        <button @onclick="@(e => SwipeBusiness("maybe"))">Maybe</button>
+        <button class="yesBtn" @onclick="@(e => SwipeBusiness("yes"))">Yes</button>
+        <button class="noBtn" @onclick="@(e => SwipeBusiness("no"))">No</button>
+        <button class="maybeBtn" @onclick="@(e => SwipeBusiness("maybe"))">Maybe</button>
     </div>
 }
 
@@ -34,7 +34,7 @@ else
     private Business? currentBusiness;
     private int currentIndex = 0;
     private bool isLocationFetched = false;
-    @* protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !isLocationFetched)
         {
@@ -43,7 +43,7 @@ else
             SetCurrentBusiness();
             StateHasChanged();
         }
-    } *@
+    }
      protected override async Task OnInitializedAsync()
     {
         await FetchBusinesses();
@@ -57,15 +57,15 @@ else
         Logger.LogInformation("Fetching businesses...");
         try
         {
-            @* var location = await JS.InvokeAsync<double[]>("getCoords");
+            var location = await JS.InvokeAsync<double[]>("getCoords");
             var longitude = location[0];
             var latitude = location[1];
 
-            Logger.LogInformation($"User's location: Latitude {latitude}, Longitude {longitude}"); *@
+            Logger.LogInformation($"User's location: Latitude {latitude}, Longitude {longitude}");
 
             var httpClient = HttpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "5NAk7jOvTY4PkS48eG69ZAo2tkAgg-vnxJFqKhrBT3BkP7qI-2MfKifiaD5UoBVMJDIsROjanPuvYPUsWK_l3CaztHfoQtCnFklxBt1DX-FNA3hL2WxuhSVYxxb_ZXYx");
-            var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?location=Boston");
+            var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?latitude={latitude}&longitude={longitude}");
             var responseBody = await response.Content.ReadAsStringAsync(); 
             if (response.IsSuccessStatusCode)
             {

@@ -66,3 +66,30 @@ a, .btn-link {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
+
+
+/* SWIPE PAGE */
+.swipeContent {
+    width: 100%;
+    text-align: center;
+}
+
+.yelpImg {
+    height: 500px;
+    width: 500px;
+}
+
+.yesBtn {
+    background-color: #3ed938;
+    color: white;
+}
+
+.noBtn {
+    background-color: red;
+    color: white;
+}
+
+.maybeBtn {
+    background-color: #0071c1;
+    color: white;
+}
