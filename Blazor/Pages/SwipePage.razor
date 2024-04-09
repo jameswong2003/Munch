@@ -5,6 +5,8 @@
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
 @inject ILogger<SwipePage> Logger
+@inject NavigationManager Navigation
+
 
 @if (businesses == null)
 {
@@ -21,6 +23,7 @@ else
 
         <img class="yelpImg" src="@currentBusiness?.Image_Url" alt="Business Image" />
         <h4>@currentBusiness?.Name</h4>
+        <p>@currentBusiness?.Location.FullAddress</p>
         <p>@currentBusiness?.Phone</p>
         <p>Rating: @currentBusiness?.Rating</p>
         <button class="yesBtn" @onclick="@(e => SwipeBusiness("yes"))">Yes</button>
@@ -44,7 +47,8 @@ else
             StateHasChanged();
         }
     }
-     protected override async Task OnInitializedAsync()
+    
+    protected override async Task OnInitializedAsync()
     {
         await FetchBusinesses();
         SetCurrentBusiness();
@@ -52,8 +56,6 @@ else
 
     private async Task FetchBusinesses()
     {
-        
-
         Logger.LogInformation("Fetching businesses...");
         try
         {
@@ -71,6 +73,17 @@ else
             {
                 var result = await response.Content.ReadFromJsonAsync<YelpResponse>();
                 businesses = result?.Businesses;
+                foreach (var business in businesses)
+                {
+                    business.Location = new Location
+                    {
+                        Address1 = business.Location?.Address1,
+                        City = business.Location?.City,
+                        State = business.Location?.State,
+                        Zip_Code = business.Location?.Zip_Code,
+                        FullAddress = $"{business.Location?.Address1}, {business.Location?.City}, {business.Location?.State}, {business.Location?.Zip_Code}"
+                    };
+                }
                 Logger.LogInformation($"Fetched {businesses?.Count ?? 0} businesses successfully.");
             }
             else
@@ -101,29 +114,53 @@ else
     {
         Logger.LogInformation($"Swiped {swipeResponse} on {currentBusiness?.Name}");
 
-        if (currentIndex < businesses?.Count - 1)
+        if (swipeResponse.ToLower() == "yes")
         {
-            currentIndex++;
-            SetCurrentBusiness();
+            if (currentBusiness != null)
+            {
+                Navigation.NavigateTo($"/calendar?businessName={currentBusiness.Name}&phone={currentBusiness.Phone}&rating={currentBusiness.Rating}&imageUrl={currentBusiness.Image_Url}&address={currentBusiness.Location.FullAddress}");
+            }
+            else
+            {
+                Logger.LogWarning("Current business is null.");
+            }
         }
         else
         {
-            Logger.LogInformation("Reached the end of the list, resetting.");
-            currentIndex = 0;
-            SetCurrentBusiness();
+            if (currentIndex < businesses?.Count - 1)
+            {
+                currentIndex++;
+                SetCurrentBusiness();
+            }
+            else
+            {
+                Logger.LogInformation("Reached the end of the list, resetting.");
+                currentIndex = 0;
+                SetCurrentBusiness();
+            }
         }
     }
 
     private class Business
     {
-        public string? Image_Url { get; set; }
-        public string? Name { get; set; }
-        public string? Phone { get; set; }
+        public string Image_Url { get; set; }
+        public string Name { get; set; }
+        public string Phone { get; set; }
         public double Rating { get; set; }
+        public Location Location { get; set; }
+    }
+
+    private class Location
+    {
+        public string Address1 { get; set; }
+        public string City { get; set; }
+        public string State { get; set; }
+        public string Zip_Code { get; set; }
+        public string FullAddress { get; set; }
     }
 
     private class YelpResponse
     {
-        public List<Business>? Businesses { get; set; }
+        public List<Business> Businesses { get; set; }
     }
 }
