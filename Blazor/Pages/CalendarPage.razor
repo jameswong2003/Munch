@@ -45,7 +45,7 @@ else
         {
             string[] scopes = { CalendarService.Scope.Calendar };
             UserCredential credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                GoogleClientSecrets.Load(new System.IO.FileStream("C:/users/jerem/Munch/credentials.json", System.IO.FileMode.Open, System.IO.FileAccess.Read)).Secrets,
+                GoogleClientSecrets.Load(new System.IO.FileStream("credentials.json", System.IO.FileMode.Open, System.IO.FileAccess.Read)).Secrets,
                 scopes,
                 "user",
                 CancellationToken.None,
