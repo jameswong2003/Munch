@@ -1,0 +1,158 @@
+@page "/calendar"
+@using Google.Apis.Auth.OAuth2;
+@using Google.Apis.Calendar.v3;
+@using Google.Apis.Calendar.v3.Data;
+@using Google.Apis.Services;
+@using Google.Apis.Util.Store;
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.WebUtilities;
+@inject NavigationManager Navigation
+@using System.Timers;
+
+
+<h3>Add to Calendar</h3>
+
+@if (!string.IsNullOrWhiteSpace(name))
+{
+    <div>
+        <img src="@imageUrl" alt="Restaurant Image" />
+        <h4>@name</h4>
+        <p>@phone</p>
+        <p>Rating: @rating</p>
+        <p>Date: <input type="date" @bind="eventDate" /></p>
+        <p>Time: <input type="time" @bind="eventTime" /></p>
+        <button @onclick="@(e => AddToCalendar())">Add to Calendar</button>
+    </div>
+}
+else
+{
+    <p>Restaurant information is missing.</p>
+}
+
+@if (isEventAdded)
+{
+    <div class="popup">
+        Event added to calendar successfully!
+    </div>
+}
+
+@code {
+    [Parameter] public string name { get; set; }
+    [Parameter] public string phone { get; set; }
+    [Parameter] public string rating { get; set; }
+    [Parameter] public string imageUrl { get; set; }
+    [Parameter] public string address { get; set; }
+    private DateTime eventDate = DateTime.Today;
+    private DateTime eventTime = DateTime.Now;
+    private bool isEventAdded = false;
+
+    private async Task AddToCalendar()
+    {
+        try
+        {
+            string credPath = "C:/users/jerem/Munch/credentials.json";
+
+            DateTime dateTime = eventDate.Date + eventTime.TimeOfDay;
+
+            await AddEventToGoogleCalendar(dateTime, credPath);
+
+            isEventAdded = true;
+            StateHasChanged(); 
+
+            // Start timer to hide the popup after 3 seconds
+            Timer timer = new Timer();
+            timer.Interval = 3000;
+            timer.Elapsed += (sender, e) =>
+            {
+                InvokeAsync(() =>
+                {
+                    isEventAdded = false;
+                    StateHasChanged(); // Refresh UI to hide the popup
+                });
+                timer.Stop();
+            };
+            timer.Start();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("An error occurred: " + ex.Message);
+                }
+            }
+
+    private async Task AddEventToGoogleCalendar(DateTime dateTime, string credPath)
+    {
+        // Scopes for the Google Calendar API
+        string[] scopes = { CalendarService.Scope.Calendar };
+
+        // Initialize Google credential
+        UserCredential credential;
+        using (var stream = new FileStream(credPath, FileMode.Open, FileAccess.Read))
+        {
+            string tokenPath = "token.json";
+            credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                GoogleClientSecrets.Load(stream).Secrets,
+                scopes,
+                "user",
+                CancellationToken.None,
+                new FileDataStore(tokenPath, true));
+        }
+
+        // Initialize Google Calendar service
+        var service = new CalendarService(new BaseClientService.Initializer()
+        {
+            HttpClientInitializer = credential,
+            ApplicationName = "Your Application Name"
+        });
+
+        // Create new event
+        Event newEvent = new Event
+        {
+            Summary = name,
+            Location = address,
+            Start = new EventDateTime
+            {
+                DateTime = dateTime,
+                TimeZone = "America/New_York"
+            },
+            End = new EventDateTime
+            {
+                DateTime = dateTime.AddHours(1),
+                TimeZone = "America/New_York"
+            }
+        };
+
+        // Add event to the user's primary calendar
+        string calendarId = "primary";
+        EventsResource.InsertRequest request = service.Events.Insert(newEvent, calendarId);
+        Event createdEvent = await request.ExecuteAsync();
+
+        // Log the event ID
+        Console.WriteLine("Event created: " + createdEvent.HtmlLink);
+    }
+
+    protected override void OnInitialized()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var queryParams = QueryHelpers.ParseQuery(uri.Query);
+
+        name = queryParams.TryGetValue("businessName", out var n) ? n.FirstOrDefault() : "";
+        address = queryParams.TryGetValue("address", out var a) ? a.FirstOrDefault() : "";
+        phone = queryParams.TryGetValue("phone", out var p) ? p.FirstOrDefault() : "";
+        rating = queryParams.TryGetValue("rating", out var r) ? r.FirstOrDefault() : "";
+        imageUrl = queryParams.TryGetValue("imageUrl", out var i) ? i.FirstOrDefault() : "";
+    }
+}
+
+<style>
+    .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #f0f0f0;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+</style>
