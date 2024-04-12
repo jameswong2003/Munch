@@ -1,4 +1,6 @@
-﻿<div class="top-row ps-3 navbar navbar-dark bg-dark">
+﻿@inject UserService UserService
+
+<div class="top-row ps-3 navbar navbar-dark bg-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="/">Munch</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
@@ -27,24 +29,40 @@
         <NavLink class="nav-item px-3 nav-link" href="/contact">
             <span class="oi oi-envelope-closed" aria-hidden="true"></span> Contact Us
         </NavLink>
-        <div class="nav-item px-3 d-flex align-items-center justify-content-between">
-            <NavLink class="nav-link" href="/login">
-                <span class="oi oi-account-login" aria-hidden="true"></span> Login
-            </NavLink>
-            <NavLink class="nav-link" href="/signup">
-                <span class="oi oi-account-login" aria-hidden="true"></span> Sign Up
-            </NavLink>
-        </div>
+
+        @if (!UserService.IsLoggedIn)
+        {
+            <div class="nav-item px-3 d-flex align-items-center justify-content-between">
+                <NavLink class="nav-link" href="/login">
+                    <span class="oi oi-account-login" aria-hidden="true"></span> Login
+                </NavLink>
+                <NavLink class="nav-link" href="/signup">
+                    <span class="oi oi-account-login" aria-hidden="true"></span> Sign Up
+                </NavLink>
+            </div>
+        }
+        else
+        {
+            <div class="nav-item px-3">
+                <button class="btn btn-outline-danger" @onclick="Logout">Logout</button>
+            </div>
+        }
     </nav>
 </div>
 
 @code {
     private bool collapseNavMenu = true;
 
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    private void Logout()
+    {
+        UserService.Logout();
+        collapseNavMenu = true;
     }
 }
