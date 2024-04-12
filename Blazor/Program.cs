@@ -12,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<UserService>();
 builder.Services.AddLogging(configure => configure.AddConsole());
 
 var app = builder.Build();

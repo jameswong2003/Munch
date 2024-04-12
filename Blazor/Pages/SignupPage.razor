@@ -1,0 +1,53 @@
+@page "/signup"
+@inject IJSRuntime JS
+
+<h3>Sign Up</h3>
+
+<div>
+    <label for="email">Email:</label>
+    <input @bind="email" id="email" type="email" placeholder="Enter your email" />
+
+    <label for="password">Password:</label>
+    <input @bind="password" id="password" type="password" placeholder="Enter your password" />
+
+    <button @onclick="SignUp">Sign Up</button>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert alert-info">@message</div>
+    }
+</div>
+
+@code {
+    private string email;
+    private string password;
+    private string message;
+
+    private async Task SignUp()
+    {
+        try
+        {
+            var result = await JS.InvokeAsync<object>("firebaseAuth.signUp", email, password);
+            var jsonData = System.Text.Json.JsonSerializer.Serialize(result);
+            var responseObject = System.Text.Json.JsonSerializer.Deserialize<AuthResponse>(jsonData);
+            
+            message = string.IsNullOrEmpty(responseObject?.Error)
+                      ? "Signup successful. Please check your email to verify."
+                      : responseObject.Error;
+        }
+        catch (JSException ex)
+        {
+            message = $"JavaScript error during signup: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            message = $"Unexpected error: {ex.Message}";
+        }
+    }
+
+    private class AuthResponse
+    {
+        public string Error { get; set; }
+        public object User { get; set; }  
+    }
+}
