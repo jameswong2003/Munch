@@ -45,10 +45,8 @@ else
         try
         {
             string clientId = System.Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
-            Console.WriteLine("Client ID: " + clientId);
 
             string clientSecret = System.Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
-            Console.WriteLine("Client Secret: " + clientSecret);
 
 
             UserCredential credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
@@ -81,7 +79,6 @@ else
         catch (Exception ex)
         {
             Console.WriteLine("Failed to retrieve calendar events: " + ex.Message);
-            // Consider how to handle errors in the UI, e.g., display an error message
         }
     }
 
