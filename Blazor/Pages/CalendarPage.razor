@@ -1,16 +1,17 @@
 @page "/calendar"
-@using Google.Apis.Auth.OAuth2;
-@using Google.Apis.Calendar.v3;
-@using Google.Apis.Calendar.v3.Data;
-@using Google.Apis.Services;
-@using Google.Apis.Util.Store;
+@using Google.Apis.Auth.OAuth2
+@using Google.Apis.Calendar.v3
+@using Google.Apis.Calendar.v3.Data
+@using Google.Apis.Services
+@using Google.Apis.Util.Store
 @inject NavigationManager Navigation
+<link href="css/calendar.css" rel="stylesheet">
 
 <h3>User's Calendar</h3>
 
 @if (!isAuthorized)
 {
-    <button @onclick="@( e => RequestAuthorization())">Authorize</button>
+    <button class="authorize-button" @onclick="CheckAuthorization">Authorize</button>
 }
 else if (events == null)
 {
@@ -22,10 +23,10 @@ else if (!events.Any())
 }
 else
 {
-    <ul>
+    <ul class="events-list">
         @foreach (var evt in events)
         {
-            <li>@evt.Summary - @evt.Start.DateTime</li>
+            <li>@evt.Summary - @evt.Start.DateTime?.ToString("MM/dd/yyyy HH:mm")</li>
         }
     </ul>
 }
@@ -43,23 +44,32 @@ else
     {
         try
         {
-            string[] scopes = { CalendarService.Scope.Calendar };
-            UserCredential credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                GoogleClientSecrets.Load(new System.IO.FileStream("credentials.json", System.IO.FileMode.Open, System.IO.FileAccess.Read)).Secrets,
-                scopes,
-                "user",
-                CancellationToken.None,
-                new FileDataStore("token.json", true));
+            string clientId = System.Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+            Console.WriteLine("Client ID: " + clientId);
 
-            var service = new CalendarService(new BaseClientService.Initializer()
-            {
-                HttpClientInitializer = credential,
-                ApplicationName = "Your Application Name"
-            });
+            string clientSecret = System.Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
+            Console.WriteLine("Client Secret: " + clientSecret);
+
+
+            UserCredential credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    new ClientSecrets
+                    {
+                        ClientId = clientId ,
+                        ClientSecret = clientSecret,
+                    },
+                    new[] { CalendarService.Scope.Calendar },
+                    "user", CancellationToken.None);
+
+                var service = new CalendarService(new BaseClientService.Initializer()
+                {
+                    HttpClientInitializer = credential,
+                    ApplicationName = "Munch",
+                });
+
 
             EventsResource.ListRequest request = service.Events.List("primary");
-            request.TimeMin = DateTime.Today.AddDays(-DateTime.Today.Day + 1); // First day of the current month
-            request.TimeMax = DateTime.Today.AddMonths(1).AddDays(-DateTime.Today.Day); // Last day of the current month
+            request.TimeMin = DateTime.Today.AddDays(-DateTime.Today.Day + 1);
+            request.TimeMax = DateTime.Today.AddMonths(1).AddDays(-DateTime.Today.Day);
             request.ShowDeleted = false;
             request.SingleEvents = true;
             request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
@@ -67,16 +77,12 @@ else
             var result = await request.ExecuteAsync();
             events = result.Items.ToList();
             isAuthorized = true;
-            StateHasChanged(); // Update UI after authorization
         }
         catch (Exception ex)
         {
-            Console.WriteLine("An error occurred: " + ex.Message);
+            Console.WriteLine("Failed to retrieve calendar events: " + ex.Message);
+            // Consider how to handle errors in the UI, e.g., display an error message
         }
     }
 
-    private async Task RequestAuthorization()
-    {
-        await CheckAuthorization();
-    }
 }
