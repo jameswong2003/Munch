@@ -74,7 +74,7 @@
             if (string.IsNullOrEmpty(responseObject?.Error))
             {
                 UserService.Login(signupModel.Email); 
-                NavigationManager.NavigateTo("/");
+                NavigationManager.NavigateTo("/home");
             }
             else
             {
@@ -102,7 +102,7 @@
             if (responseObject != null && responseObject.Success)
             {
                 UserService.Login(loginModel.Email); 
-                NavigationManager.NavigateTo("/");
+                NavigationManager.NavigateTo("/home");
             }
             else
             {
