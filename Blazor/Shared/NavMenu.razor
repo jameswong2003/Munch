@@ -11,11 +11,8 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
-        <NavLink class="nav-item px-3 nav-link" href="/" Match="NavLinkMatch.All">
+        <NavLink class="nav-item px-3 nav-link" href="/home" Match="NavLinkMatch.All">
             <span class="oi oi-home" aria-hidden="true"></span> Home
-        </NavLink>
-        <NavLink class="nav-item px-3 nav-link" href="/profile">
-            <span class="oi oi-person" aria-hidden="true"></span> Profile
         </NavLink>
         <NavLink class="nav-item px-3 nav-link" href="/swipe">
             <span class="oi oi-action-redo" aria-hidden="true"></span> Swipe
@@ -31,17 +28,6 @@
         </NavLink>
 
         @if (!UserService.IsLoggedIn)
-        {
-            <div class="nav-item px-3 d-flex align-items-center justify-content-between">
-                <NavLink class="nav-link" href="/login">
-                    <span class="oi oi-account-login" aria-hidden="true"></span> Login
-                </NavLink>
-                <NavLink class="nav-link" href="/signup">
-                    <span class="oi oi-account-login" aria-hidden="true"></span> Sign Up
-                </NavLink>
-            </div>
-        }
-        else
         {
             <div class="nav-item px-3">
                 <button class="btn btn-outline-danger" @onclick="Logout">Logout</button>
