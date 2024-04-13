@@ -1,39 +1,48 @@
-.calendar-container {
-    max-width: 800px;
-    margin: auto;
-    padding: 20px;
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@100;300;400;500;800&display=swap");
+body {
+    font-family: 'Montserrat', Arial, sans-serif;
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    background: #E4D0FF;  
+  }
+  
+h1 {
+  font-weight: 800;
+  margin: 1rem 0 0;
 }
 
-.calendar-container img {
-    width: 200px;
-    height: auto;
-    margin-bottom: 10px;
+ul {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  flex-wrap: wrap;
+  list-style: none;
 }
-
-.calendar-container h4 {
-    margin-top: 0;
+ul li {
+  display: flex;
+  width: 10rem;
+  height: 10rem;
+  margin: 0.25rem;
+  flex-flow: column;
+  border-radius: 0.2rem;
+  padding: 1rem;
+  font-weight: 300;
+  font-size: 0.8rem;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
-
-.calendar-container p {
-    margin: 5px 0;
+ul li time {
+  font-size: 2rem;
+  margin: 0 0 1rem 0;
+  font-weight: 500;
 }
-
-.calendar-container input[type="date"],
-.calendar-container input[type="time"] {
-    padding: 5px;
-    margin: 5px 0;
-    width: 200px;
+ul .today {
+  background: #ffffff70;
 }
-
-.calendar-container button {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.calendar-container button:hover {
-    background-color: #0056b3;
+ul .today time {
+  font-weight: 800;
 }

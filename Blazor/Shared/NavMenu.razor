@@ -26,14 +26,13 @@
         <NavLink class="nav-item px-3 nav-link" href="/contact">
             <span class="oi oi-envelope-closed" aria-hidden="true"></span> Contact Us
         </NavLink>
-
-        @if (!UserService.IsLoggedIn)
-        {
-            <div class="nav-item px-3">
-                <button class="btn btn-outline-danger" @onclick="Logout">Logout</button>
-            </div>
-        }
     </nav>
+    @if (UserService.IsLoggedIn)
+    {
+        <div class="nav-item mt-auto px-3">
+            <button class="btn btn-outline-danger" @onclick="Logout">Logout</button>
+        </div>
+    }
 </div>
 
 @code {

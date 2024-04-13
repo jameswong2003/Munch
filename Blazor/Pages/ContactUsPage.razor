@@ -1,0 +1,56 @@
+@page "/contact"
+@layout MainLayout
+<link href="css/contact.css" rel="stylesheet">
+
+<div id="container">
+    <h1>&bull; Contact Us &bull;</h1>   
+    <EditForm Model="@contactModel" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <div class="name">
+            <InputText id="name_input" @bind-Value="contactModel.Name" class="input" placeholder="My name is" />
+        </div>
+        <div class="email">
+            <InputText id="email_input" type="email" @bind-Value="contactModel.Email" class="input" placeholder="My e-mail is" />
+        </div>
+        <div class="telephone">
+            <InputText id="telephone_input" @bind-Value="contactModel.Telephone" class="input" placeholder="My number is" />
+        </div>
+        <div class="subject">
+            <InputSelect id="subject_input" @bind-Value="contactModel.Subject" class="input">
+                <option disabled selected>Subject line</option>
+                <option value="Project">I'd like to start a project</option>
+                <option value="Question">I'd like to ask a question</option>
+                <option value="Proposal">I'd like to make a proposal</option>
+            </InputSelect>
+        </div>
+        <div class="message">
+            <InputTextArea id="message_input" @bind-Value="contactModel.Message" class="input" placeholder="I'd like to chat about" />
+        </div>
+        <div class="submit">
+            <button type="submit" id="form_button">Send Message</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private ContactModel contactModel = new ContactModel();
+
+    private void HandleValidSubmit()
+    {
+        Console.WriteLine("Form Submitted");
+        Console.WriteLine($"Name: {contactModel.Name}");
+        Console.WriteLine($"Email: {contactModel.Email}");
+        Console.WriteLine($"Telephone: {contactModel.Telephone}");
+        Console.WriteLine($"Subject: {contactModel.Subject}");
+        Console.WriteLine($"Message: {contactModel.Message}");
+    }
+
+    public class ContactModel
+    {
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Telephone { get; set; }
+        public string Subject { get; set; }
+        public string Message { get; set; }
+    }
+}

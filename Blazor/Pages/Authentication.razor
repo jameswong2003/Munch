@@ -74,7 +74,7 @@
             if (string.IsNullOrEmpty(responseObject?.Error))
             {
                 UserService.Login(signupModel.Email); 
-                NavigationManager.NavigateTo("/login");
+                NavigationManager.NavigateTo("/");
             }
             else
             {

@@ -66,7 +66,7 @@ else
             Logger.LogInformation($"User's location: Latitude {latitude}, Longitude {longitude}");
 
             var httpClient = HttpClientFactory.CreateClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "5NAk7jOvTY4PkS48eG69ZAo2tkAgg-vnxJFqKhrBT3BkP7qI-2MfKifiaD5UoBVMJDIsROjanPuvYPUsWK_l3CaztHfoQtCnFklxBt1DX-FNA3hL2WxuhSVYxxb_ZXYx");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", System.Environment.GetEnvironmentVariable("YELP_API_BEARER_TOKEN"));
             var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?latitude={latitude}&longitude={longitude}");
             var responseBody = await response.Content.ReadAsStringAsync(); 
             if (response.IsSuccessStatusCode)

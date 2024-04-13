@@ -1,19 +1,38 @@
 @page "/home"
+@inject NavigationManager NavigationManager
+<link href="css/home.css" rel="stylesheet">
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-8">
-            <h1>Hi John!</h1>
-            <p>Swipe your way to delicious discoveries with Munch</p>
-            <a href="swipe" class="btn btn-primary">Swipe Now</a>
+<div class="page-content" id="page-content">
+    <div class="container d-flex align-items-center vh-100">
+        <div class="bg-image col-md-8">
+            <div class="overlay">
+                <h1>Welcome to Munch.</h1>
+                <p>Swipe to discover delicious discoveries!</p>
+                <button >Swipe Now</button>
+            </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="profile-sidebar">
-                <h2>Your Profile</h2>
-                <p><strong>Name:</strong> John Doe</p>
-                <p><strong>Interests:</strong> Italian, Sushi, Vegan</p>
+        <div class="profile-card col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="profile-image mb-3">
+                        <img src="https://img.icons8.com/bubbles/100/000000/user.png" class="img-radius" alt="User Profile Image">
+                    </div>
+                    <h5 class="user-name mb-3">John Doe</h5>
+                    <div class="most-visited">
+                        <h6 class="mb-2">Most Visited Restaurants:</h6>
+                        <ul class="list-unstyled">
+                            <li>Chez Munch</li>
+                            <li>Sushi House</li>
+                            <li>The Pie Pizzeria</li>
+                            <li>Burger Barn</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+@code {
+    // Optional: Code-behind to manage data or interactions
+}

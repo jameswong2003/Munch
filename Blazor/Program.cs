@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,8 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddLogging(configure => configure.AddConsole());
+DotNetEnv.Env.Load();
+
 
 var app = builder.Build();
 
