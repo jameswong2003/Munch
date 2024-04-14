@@ -6,32 +6,41 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject ILogger<SwipePage> Logger
 @inject NavigationManager Navigation
+<link rel="stylesheet" href="/css/swipe.css" />
 
 
-@if (businesses == null)
-{
-    <p>Loading...</p>
-}
-else if (!businesses.Any())
-{
-    <p>No businesses found.</p>
-}
-else
-{
-    <div class="swipeContent">
-        <h3>Swipe Through Options</h3>
+<div class="background">
+    <div class="container">
+        <div class="swiper">
+            <div class="card">
+        @if (businesses == null)
+        {
+            <p>Loading...</p>
+        }
+        else if (!businesses.Any())
+        {
+            <p>No businesses found.</p>
+        }
+        else
+        {
+            <div class="swipeContent">
+                <h3>Swipe Through Options</h3>
 
-        <img class="yelpImg" src="@currentBusiness?.Image_Url" alt="Business Image" />
-        <h4>@currentBusiness?.Name</h4>
-        <p>@currentBusiness?.Location.FullAddress</p>
-        <p>@currentBusiness?.Phone</p>
-        <p>Rating: @currentBusiness?.Rating</p>
-        <button class="yesBtn" @onclick="@(e => SwipeBusiness("yes"))">Yes</button>
-        <button class="noBtn" @onclick="@(e => SwipeBusiness("no"))">No</button>
-        <button class="maybeBtn" @onclick="@(e => SwipeBusiness("maybe"))">Maybe</button>
+                <img class="yelpImg" src="@currentBusiness?.Image_Url" alt="Business Image" />
+                <h4>@currentBusiness?.Name</h4>
+                <p>@currentBusiness?.Location.FullAddress</p>
+                <p>@currentBusiness?.Phone</p>
+                <p>Rating: @currentBusiness?.Rating</p>
+                <button class="noBtn" @onclick="@(e => SwipeBusiness("no"))">No</button>
+  
+                <button class="maybeBtn" @onclick="@(e => SwipeBusiness("maybe"))">Maybe</button>
+                <button class="yesBtn" @onclick="@(e => SwipeBusiness("yes"))">Yes</button>
+            </div>
+        }
+            </div>
+        </div>
     </div>
-}
-
+</div>
 @code {
     private List<Business>? businesses;
     private Business? currentBusiness;
