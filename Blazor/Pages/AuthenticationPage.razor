@@ -2,6 +2,7 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 @inject UserService UserService
+@inject FirestoreService Db
 
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@500&display=swap" rel="stylesheet">
 <link href="css/Auth.css" rel="stylesheet">
@@ -13,6 +14,7 @@
     <div class="signup">
         <EditForm Model="@signupModel" OnValidSubmit="HandleSignup">
             <label for="chk" aria-hidden="true">Sign up</label>
+            <InputText id="name" @bind-Value="signupModel.Name" placeholder="Name" class="input" required />
             <InputText id="username" @bind-Value="signupModel.Username" placeholder="Username" class="input" required />
             <InputText id="email" @bind-Value="signupModel.Email" placeholder="Email" class="input" required />
             <InputText type="password" id="password" @bind-Value="signupModel.Password" placeholder="Password" class="input" required />
@@ -55,6 +57,7 @@
         public string Email { get; set; }
         public string Password { get; set; }
         public string ErrorMessage { get; set; }
+        public string Name { get; set; }
     }
 
     private class AuthResponse
@@ -73,7 +76,10 @@
 
             if (string.IsNullOrEmpty(responseObject?.Error))
             {
-                UserService.Login(signupModel.Email); 
+                string id = await JS.InvokeAsync<string>("getCurrentUserId");
+                var u = new User(id, signupModel.Name, signupModel.Email, signupModel.Username);
+                await Db.AddOrUpdate<User>(u);
+                UserService.Login(signupModel.Email, id); 
                 NavigationManager.NavigateTo("/home");
             }
             else
@@ -101,7 +107,8 @@
 
             if (responseObject != null && responseObject.Success)
             {
-                UserService.Login(loginModel.Email); 
+                string id = await JS.InvokeAsync<string>("getCurrentUserId");
+                UserService.Login(loginModel.Email, id); 
                 NavigationManager.NavigateTo("/home");
             }
             else

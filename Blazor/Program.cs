@@ -6,15 +6,25 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DotNetEnv;
+using Google.Cloud.Firestore;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+//var firebaseJson = JsonSerializer.Serialize(new FirebaseSettings());
+
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddLogging(configure => configure.AddConsole());
+builder.Services.AddSingleton(_ => new FirestoreService(
+    new FirestoreDbBuilder
+    {
+        ProjectId = "munch-77a3b"
+    }.Build()
+));
 DotNetEnv.Env.Load();
 
 

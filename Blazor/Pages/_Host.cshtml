@@ -54,6 +54,8 @@
                 try {
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     console.log("User signed up:", userCredential.user);
+                    console.log(userCredential.user.uid);
+                    window.userID = userCredential.user.uid;
                     return { success: true, user: userCredential.user };
                 } catch (error) {
                     console.error("Signup error:", error.code, error.message);
@@ -63,12 +65,15 @@
             logIn: async (email, password) => {
                 try {
                     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    window.UserID = userCredential.user.uid;
                     return { success: true, user: userCredential.user.email };
                 } catch (error) {
                     return { success: false, error: error.message };
                 }
             }
         };
+
+        window.getCurrentUserId = () => window.userID
     </script>
     <script>
         window.getCoords = async () => {

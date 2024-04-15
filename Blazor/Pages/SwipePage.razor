@@ -6,6 +6,8 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject ILogger<SwipePage> Logger
 @inject NavigationManager Navigation
+@inject FirestoreService Db
+@inject UserService UserService
 
 
 @if (businesses == null)
@@ -110,12 +112,25 @@ else
         }
     }
 
-    private void SwipeBusiness(string swipeResponse)
+    private async void SwipeBusiness(string swipeResponse)
     {
         Logger.LogInformation($"Swiped {swipeResponse} on {currentBusiness?.Name}");
 
         if (swipeResponse.ToLower() == "yes")
         {
+            string id = UserService.Id;
+            User currentUser = await Db.Get<User>(id);
+            currentUser.AddRestaurant(
+                new Restaurant(
+                    currentBusiness.Image_Url,
+                    currentBusiness.Name,
+                    currentBusiness.Phone,
+                    currentBusiness.Rating,
+                    currentBusiness.Location.FullAddress
+                )
+            );
+            await Db.AddOrUpdate<User>(currentUser);
+
             if (currentBusiness != null)
             {
                 Navigation.NavigateTo($"/add-calendar?businessName={currentBusiness.Name}&phone={currentBusiness.Phone}&rating={currentBusiness.Rating}&imageUrl={currentBusiness.Image_Url}&address={currentBusiness.Location.FullAddress}");
