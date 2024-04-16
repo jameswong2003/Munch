@@ -1,5 +1,6 @@
 @page "/trending"
 @inject FirestoreService Db
+@inject ILogger<SwipePage> Logger
 @inject UserService UserService
 
 <link href="css/trending.css" rel="stylesheet">
@@ -56,11 +57,23 @@
         new Restaurant { Name = "Burger Barn", Description = "Home of the best burgers in town.", ImageUrl = "images/burger-barn.jpg" }
     };
 
+    User CurrentUser = new User();
+    List<Restaurant> PastRestaurants = new List<Restaurant>{};
+    protected override async Task OnInitializedAsync()
+    {
+        string id = UserService.Id;
+        CurrentUser = await Db.Get<User>(id);
+        Logger.LogInformation($"Number of Liked Restaurants: {CurrentUser.LikedRestaurants.Count}");
+    }
+
+
     @* TODO Get Past Restaurants from firebase DB *@
     private async void GetPastRestaurants()
     {
         string id = UserService.Id;
         User currentUser = await Db.Get<User>(id);
-        
+        Logger.LogInformation($"User: {currentUser}");
     }
+
+    
 }
