@@ -1,5 +1,9 @@
 @page "/home"
 @inject NavigationManager NavigationManager
+@inject UserService UserService
+@inject FirestoreService Db
+@inject IJSRuntime JS
+
 <link href="css/home.css" rel="stylesheet">
 
 <div class="page-content" id="page-content">
@@ -17,7 +21,7 @@
                     <div class="profile-image mb-3">
                         <img src="https://img.icons8.com/bubbles/100/000000/user.png" class="img-radius" alt="User Profile Image">
                     </div>
-                    <h5 class="user-name mb-3">John Doe</h5>
+                    <h5 class="user-name mb-3">@CurrentUser.Name</h5>
                     <div class="most-visited">
                         <h6 class="mb-2">Most Visited Restaurants:</h6>
                         <ul class="list-unstyled">
@@ -35,4 +39,10 @@
 
 @code {
     // Optional: Code-behind to manage data or interactions
+    User CurrentUser = new User();
+    protected override async Task OnInitializedAsync()
+    {
+        string id = UserService.Id;
+        CurrentUser = await Db.Get<User>(id);
+    }
 }
