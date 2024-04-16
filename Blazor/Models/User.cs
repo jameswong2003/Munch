@@ -37,5 +37,5 @@ public class User: IFirestoreEntity {
 
     public void AddRestaurant(Restaurant res) {
         LikedRestaurants.Add(res);
-    } 
+    }
 }

@@ -1,10 +1,27 @@
 @page "/trending"
+@inject FirestoreService Db
+@inject UserService UserService
+
 <link href="css/trending.css" rel="stylesheet">
 
 <h1 class="heading">Trending Restaurants</h1>
 
 <div class="card-container">
-    @foreach (var restaurant in restaurants)
+    @foreach (var restaurant in pastRestaurants)
+    {
+        <div class="restaurant-card">
+            <img src="@restaurant.ImageUrl" alt="@restaurant.Name" class="restaurant-image"/>
+            <div class="restaurant-info">
+                <h2>@restaurant.Name</h2>
+                <p>@restaurant.Description</p>
+            </div>
+        </div>
+    }
+</div>
+
+<h1 class="heading">Past Viewed Restaurants</h1>
+<div class="card-container">
+    @foreach (var restaurant in pastRestaurants)
     {
         <div class="restaurant-card">
             <img src="@restaurant.ImageUrl" alt="@restaurant.Name" class="restaurant-image"/>
@@ -17,6 +34,12 @@
 </div>
 
 @code {
+    public class Restaurant
+    {
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string ImageUrl { get; set; }
+    }
     private List<Restaurant> restaurants = new List<Restaurant>
     {
         new Restaurant { Name = "Chez Munch", Description = "A delightful mix of French and local cuisine.", ImageUrl = "images/chez-munch.jpg" },
@@ -25,10 +48,19 @@
         new Restaurant { Name = "Burger Barn", Description = "Home of the best burgers in town.", ImageUrl = "images/burger-barn.jpg" }
     };
 
-    public class Restaurant
+    private List<Restaurant> pastRestaurants = new List<Restaurant>
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string ImageUrl { get; set; }
+        new Restaurant { Name = "Chez Munch", Description = "A delightful mix of French and local cuisine.", ImageUrl = "images/chez-munch.jpg" },
+        new Restaurant { Name = "Sushi House", Description = "Authentic and inventive sushi creations.", ImageUrl = "images/sushi-house.jpg" },
+        new Restaurant { Name = "The Pie Pizzeria", Description = "Gourmet pizzas with a local twist.", ImageUrl = "images/pie-pizzeria.jpg" },
+        new Restaurant { Name = "Burger Barn", Description = "Home of the best burgers in town.", ImageUrl = "images/burger-barn.jpg" }
+    };
+
+    @* TODO Get Past Restaurants from firebase DB *@
+    private async void GetPastRestaurants()
+    {
+        string id = UserService.Id;
+        User currentUser = await Db.Get<User>(id);
+        
     }
 }
