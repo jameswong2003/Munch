@@ -63,7 +63,7 @@
     {
         string id = UserService.Id;
         CurrentUser = await Db.Get<User>(id);
-        Logger.LogInformation($"Number of Liked Restaurants: {CurrentUser.LikedRestaurants.Count}");
+        Logger.LogInformation($"Type of Liked Restaurants: {CurrentUser.LikedRestaurants.GetType()}, Count: {CurrentUser.LikedRestaurants.Count}");
     }
 
 
