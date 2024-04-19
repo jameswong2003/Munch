@@ -22,7 +22,8 @@ builder.Services.AddLogging(configure => configure.AddConsole());
 builder.Services.AddSingleton(_ => new FirestoreService(
     new FirestoreDbBuilder
     {
-        ProjectId = "munch-77a3b"
+        ProjectId = "munch-77a3b",
+        CredentialsPath = "firebase-auth.json"
     }.Build()
 ));
 DotNetEnv.Env.Load();
