@@ -1,51 +1,44 @@
 ﻿@inject UserService UserService
 @inject NavigationManager NavigationManager
 
-<div class="top-row ps-3 navbar navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/">Munch</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Munch</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <NavLink class="nav-item px-3 nav-link" href="/home" Match="NavLinkMatch.All">
-            <span class="oi oi-home" aria-hidden="true"></span> Home
-        </NavLink>
-        <NavLink class="nav-item px-3 nav-link" href="/swipe">
-            <span class="oi oi-action-redo" aria-hidden="true"></span> Swipe
-        </NavLink>
-        <NavLink class="nav-item px-3 nav-link" href="/calendar">
-            <span class="oi oi-calendar" aria-hidden="true"></span> Calendar
-        </NavLink>
-        <NavLink class="nav-item px-3 nav-link" href="/trending">
-            <span class="oi oi-graph" aria-hidden="true"></span> Trending
-        </NavLink>
-        <NavLink class="nav-item px-3 nav-link" href="/contact">
-            <span class="oi oi-envelope-closed" aria-hidden="true"></span> Contact Us
-        </NavLink>
-    </nav>
-    @if (UserService.IsLoggedIn)
-    {
-        <div class="nav-item mt-auto px-3">
-            <button class="btn btn-outline-danger" @onclick="Logout">Logout</button>
-        </div>
-    }
-</div>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+                <a class="nav-link" href="#">Home</a>
+            </li>
+
+            <li class="nav-item active">
+                <a class="nav-link" href="/swipe">Swipe</a>
+            </li>
+
+            <li class="nav-item active">
+                <a class="nav-link" href="/calendar">Calendar</a>
+            </li>
+
+            <li class="nav-item active">
+                <a class="nav-link" href="/trending">Trending</a>
+            </li>
+
+            <li class="nav-item active">
+                <a class="nav-link" href="/contact">Contact Us</a>
+            </li>
+        </ul>
+@* 
+        @if (UserService.IsLoggedIn) {
+            <div class="nav-item mt-auto px-3">
+                <button class="btn btn-outline-danger" @onclick="Logout">Logout</button>
+            </div>
+        } *@
+    </div>
+</nav>
 
 @code {
-    private bool collapseNavMenu = true;
-
-    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
-
     private void Logout()
     {
         UserService.Logout();
