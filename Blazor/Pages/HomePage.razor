@@ -1,5 +1,6 @@
 @page "/home"
 @inject NavigationManager NavigationManager
+@inject NavigationManager Navigation
 @inject UserService UserService
 @inject FirestoreService Db
 @inject IJSRuntime JS
@@ -39,6 +40,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        @* Check if user is logged in *@
+        if (!UserService.IsLoggedIn) {
+            Navigation.NavigateTo("/");
+        }
+
         try
         {
             string id = UserService.Id;

@@ -9,6 +9,7 @@
 @inject NavigationManager Navigation
 @inject ScrapingService ScrapingService
 @using System.Timers;
+@inject UserService UserService
 
 
 <h3>Add to Calendar</h3>
@@ -152,6 +153,11 @@ else
 
     protected async override Task OnInitializedAsync()
     {
+        @* Check if user is logged in *@
+        if (!UserService.IsLoggedIn) {
+            Navigation.NavigateTo("/");
+        }
+        
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
         var queryParams = QueryHelpers.ParseQuery(uri.Query);
 
