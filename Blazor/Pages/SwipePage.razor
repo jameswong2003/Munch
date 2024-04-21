@@ -9,67 +9,52 @@
 @inject FirestoreService Db
 @inject UserService UserService
 
-
 <div class="background">
     <div class="container">
         <div class="swiper">
-            <div class="card">
-        @if (businesses == null)
-        {
-            <p>Loading...</p>
-        }
-        else if (!businesses.Any())
-        {
-            <p>No businesses found.</p>
-        }
-        else
-        {
-            <div class="swipeContent">
-                <h3>Swipe Through Options</h3>
-
-                <img class="yelpImg" src="@currentBusiness?.image_url" alt="Business Image" />
-                <h4>@currentBusiness?.name</h4>
-                <p>@currentBusiness?.Location.FullAddress</p>
-                <p>@currentBusiness?.phone</p>
-                <p>Rating: @currentBusiness?.rating</p>
-                <p>Price: @currentBusiness?.price</p>
-                <button class="noBtn" @onclick="@(e => SwipeBusiness("no"))">No</button>
-  
-                <button class="maybeBtn" @onclick="@(e => SwipeBusiness("maybe"))">Maybe</button>
-                <button class="yesBtn" @onclick="@(e => SwipeBusiness("yes"))">Yes</button>
-            </div>
-        }
-            </div>
+            @if (businesses == null || businesses.Count < 2)
+            {
+                <p>Loading or insufficient businesses...</p>
+            }
+            else
+            {
+               @foreach (var business in displayedBusinesses)
+                {
+                    <div class="card" @onclick="() => SwipeBusiness(business)">
+                        <img class="yelpImg" src="@business.image_url" alt="Business Image" />
+                        <h4>@business.name</h4>
+                        <p>@business.Location.FullAddress</p>
+                        <p>Phone: @business.phone</p>
+                        <p>Rating: @business.rating <span>★</span></p>
+                        <p>Reviews: @business.review_count</p>
+                        <p>Price: @business.price</p>
+                    </div>
+                }
+            }
         </div>
     </div>
 </div>
+
 @code {
     private List<Business>? businesses;
-    private Business? currentBusiness;
-    private int currentIndex = 0;
-    private bool isLocationFetched = false;
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender && !isLocationFetched)
-        {
-            isLocationFetched = true; 
-            await FetchBusinesses();
-            SetCurrentBusiness();
+    private Business[] displayedBusinesses = new Business[2];
+    private HashSet<Business> displayedSet = new HashSet<Business>();
+    private int selectionCount = 0;
+
+    protected override async Task OnInitializedAsync() {
+        await FetchBusinesses();
+        SetInitialBusinesses();
+    }
+
+    protected override void OnAfterRender(bool firstRender) {
+        if (firstRender) {
             StateHasChanged();
         }
     }
-    
-    protected override async Task OnInitializedAsync()
-    {
-        await FetchBusinesses();
-        SetCurrentBusiness();
-    }
 
-    private async Task FetchBusinesses()
-    {
+    private async Task FetchBusinesses() {
         Logger.LogInformation("Fetching businesses...");
-        try
-        {
+        try {
             var location = await JS.InvokeAsync<double[]>("getCoords");
             var longitude = location[0];
             var latitude = location[1];
@@ -78,101 +63,83 @@
 
             var httpClient = HttpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", System.Environment.GetEnvironmentVariable("YELP_API_BEARER_TOKEN"));
-            var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?latitude={latitude}&longitude={longitude}");
-            var responseBody = await response.Content.ReadAsStringAsync(); 
-            if (response.IsSuccessStatusCode)
-            {
+            var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?latitude={latitude}&longitude={longitude}&limit=50");
+            if (response.IsSuccessStatusCode) {
                 var result = await response.Content.ReadFromJsonAsync<YelpResponse>();
                 businesses = result?.Businesses;
-
-                foreach (var business in businesses)
-                {
-                    business.Location = new Location
-                    {
-                        Address1 = business.Location?.Address1,
-                        City = business.Location?.City,
-                        State = business.Location?.State,
-                        Zip_Code = business.Location?.Zip_Code,
-                        FullAddress = $"{business.Location?.Address1}, {business.Location?.City}, {business.Location?.State}, {business.Location?.Zip_Code}"
-                    };
-                }
                 Logger.LogInformation($"Fetched {businesses?.Count ?? 0} businesses successfully.");
+            } else {
+                Logger.LogWarning($"Failed to fetch businesses. Status code: {response.StatusCode}");
+                businesses = new List<Business>(); // Avoid null reference errors
             }
-            else
-            {
-                Logger.LogWarning($"Failed to fetch businesses. Status code: {responseBody}");
-            }
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             Logger.LogError(ex, "An error occurred while fetching businesses.");
-        }
-
-        if (businesses != null && businesses.Any())
-        {
-            SetCurrentBusiness();
+            businesses = new List<Business>(); // Ensure stability even on exceptions
         }
     }
 
-    private void SetCurrentBusiness()
-    {
-        if (businesses != null && businesses.Any() && currentIndex < businesses.Count)
-        {
-            currentBusiness = businesses[currentIndex];
+    private void SetInitialBusinesses() {
+        if (businesses != null && businesses.Count >= 2) {
+            displayedBusinesses[0] = businesses[0];
+            displayedBusinesses[1] = businesses[1];
+            displayedSet.Add(businesses[0]);
+            displayedSet.Add(businesses[1]);
         }
     }
 
-    private async void SwipeBusiness(string swipeResponse)
-    {
-        Logger.LogInformation($"Swiped {swipeResponse} on {currentBusiness?.name}");
+    private void SwipeBusiness(Business selectedBusiness) {
+        Logger.LogInformation($"Selected {selectedBusiness.name}");
 
-        if (swipeResponse.ToLower() == "yes")
-        {
-            string id = UserService.Id;
-            User currentUser = await Db.Get<User>(id);
-            currentUser.AddRestaurant(
-                new Restaurant
-                {
-                    image_url = currentBusiness.image_url,
-                    name = currentBusiness.name,
-                    phone = currentBusiness.phone,
-                    rating = currentBusiness.rating,
-                    review_count = currentBusiness.review_count,
-                    yelp_url = currentBusiness.yelp_url,
-                    price = currentBusiness.price,
-                    full_address = currentBusiness.Location.FullAddress
-                }
-            );
-            await Db.AddOrUpdate<User>(currentUser);
+        // Update the set of displayed businesses
+        displayedSet.Add(selectedBusiness);
 
-            if (currentBusiness != null)
-            {
-                Navigation.NavigateTo($"/add-calendar?businessName={currentBusiness.name}&phone={currentBusiness.phone}&rating={currentBusiness.rating}&imageUrl={currentBusiness.image_url}&address={currentBusiness.Location.FullAddress}");
-            }
-            else
-            {
-                Logger.LogWarning("Current business is null.");
-            }
+        // Find the index of the non-selected business and replace it
+        int indexToReplace = Array.IndexOf(displayedBusinesses, selectedBusiness) == 0 ? 1 : 0;
+        Business nextBusiness = FindNextBusiness(selectedBusiness);
+
+        if (nextBusiness != null) {
+            displayedBusinesses[indexToReplace] = nextBusiness;
         }
-        else
-        {
-            if (currentIndex < businesses?.Count - 1)
-            {
-                currentIndex++;
-                SetCurrentBusiness();
-            }
-            else
-            {
-                Logger.LogInformation("Reached the end of the list, resetting.");
-                currentIndex = 0;
-                SetCurrentBusiness();
-            }
+
+        selectionCount++;
+        if (selectionCount == 5) { // After 5 selections, add to the database or handle end game
+            Logger.LogInformation($"Final selection: {selectedBusiness.name}. Adding to database...");
+            AddToDatabase(selectedBusiness);
         }
     }
 
+    private Business FindNextBusiness(Business current) {
+        foreach (var business in businesses) {
+            if (!displayedSet.Contains(business)) {
+                displayedSet.Add(business);
+                return business;
+            }
+        }
+        return null; // or handle logic if all are displayed
+    }
 
-    private class Business
-    {
+    private async void AddToDatabase(Business business) {
+        var user = await Db.Get<User>(UserService.Id);
+        user.AddRestaurant(new Restaurant {
+            image_url = business.image_url,
+            name = business.name,
+            phone = business.phone,
+            rating = business.rating,
+            review_count = business.review_count,
+            yelp_url = business.yelp_url,
+            price = business.price,
+            full_address = business.Location.FullAddress
+        });
+        await Db.AddOrUpdate<User>(user);
+        NavigateToAddCalendar(business);
+    }
+
+    private void NavigateToAddCalendar(Business business) {
+        var url = $"/add-calendar?businessName={business.name}&phone={business.phone}&rating={business.rating}&imageUrl={business.image_url}&address={business.Location.FullAddress}";
+        Navigation.NavigateTo(url);
+    }
+
+    private class Business {
         public string image_url { get; set; }
         public string name { get; set; }
         public string phone { get; set; }
@@ -183,8 +150,7 @@
         public Location Location { get; set; }
     }
 
-    private class Location
-    {
+    private class Location {
         public string Address1 { get; set; }
         public string City { get; set; }
         public string State { get; set; }
@@ -192,8 +158,7 @@
         public string FullAddress { get; set; }
     }
 
-    private class YelpResponse
-    {
+    private class YelpResponse {
         public List<Business> Businesses { get; set; }
     }
 }

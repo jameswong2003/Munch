@@ -119,7 +119,7 @@ button:hover {
 .burger-img {
     position: absolute;
     bottom: 25%;
-    right: 3%;
+    right: -5%;
     width: 50%;
     z-index: 0;
     transform: rotate(-25deg);
