@@ -5,6 +5,9 @@
 @using Google.Apis.Services
 @using Google.Apis.Util.Store
 @inject NavigationManager Navigation
+@inject UserService UserService
+
+
 <link href="css/calendar.css" rel="stylesheet">
 
 <h3>User's Calendar</h3>
@@ -37,6 +40,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        @* Check if user is logged in *@
+        if (!UserService.IsLoggedIn) {
+            Navigation.NavigateTo("/");
+        }
+
+        @* Check for google calendar authorization *@
         await CheckAuthorization();
     }
 
