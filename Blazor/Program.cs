@@ -26,6 +26,7 @@ builder.Services.AddSingleton(_ => new FirestoreService(
         CredentialsPath = "firebase-auth.json"
     }.Build()
 ));
+builder.Services.AddScoped<ScrapingService>();
 DotNetEnv.Env.Load();
 
 

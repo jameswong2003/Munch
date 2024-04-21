@@ -7,6 +7,7 @@
 @using Microsoft.AspNetCore.Components;
 @using Microsoft.AspNetCore.WebUtilities;
 @inject NavigationManager Navigation
+@inject ScrapingService ScrapingService
 @using System.Timers;
 
 
@@ -19,6 +20,24 @@
         <h4>@name</h4>
         <p>@phone</p>
         <p>Rating: @rating</p>
+
+        @if (scrapeResults != null)
+        {
+            if (scrapeResults.ReservationURL != null)
+            {
+                <p>Make a reservation <a href="@scrapeResults.ReservationURL" target="_blank">here</a></p>
+            }
+
+            if (scrapeResults.RestaurantWebsiteURL != null)
+            {
+                <p>Visit their website <a href="@scrapeResults.RestaurantWebsiteURL" target="_blank">here</a></p>
+            }
+        }
+        else
+        {
+            <p>Looking for more restaurant information...</p>
+        }
+
         <p>Date: <input type="date" @bind="eventDate" /></p>
         <p>Time: <input type="time" @bind="eventTime" /></p>
         <button @onclick="@(e => AddToCalendar())">Add to Calendar</button>
@@ -42,6 +61,7 @@ else
     [Parameter] public string rating { get; set; }
     [Parameter] public string imageUrl { get; set; }
     [Parameter] public string address { get; set; }
+    public ScrapingService.ScrapingResults? scrapeResults = null;
     private DateTime eventDate = DateTime.Today;
     private DateTime eventTime = DateTime.Now;
     private bool isEventAdded = false;
@@ -130,7 +150,7 @@ else
         Console.WriteLine("Event created: " + createdEvent.HtmlLink);
     }
 
-    protected override void OnInitialized()
+    protected async override Task OnInitializedAsync()
     {
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
         var queryParams = QueryHelpers.ParseQuery(uri.Query);
@@ -140,7 +160,11 @@ else
         phone = queryParams.TryGetValue("phone", out var p) ? p.FirstOrDefault() : "";
         rating = queryParams.TryGetValue("rating", out var r) ? r.FirstOrDefault() : "";
         imageUrl = queryParams.TryGetValue("imageUrl", out var i) ? i.FirstOrDefault() : "";
+
+        scrapeResults = await ScrapingService.GetRestaurantUrl(name);
+
     }
+
 }
 
 <style>
