@@ -27,11 +27,12 @@
             <div class="swipeContent">
                 <h3>Swipe Through Options</h3>
 
-                <img class="yelpImg" src="@currentBusiness?.Image_Url" alt="Business Image" />
-                <h4>@currentBusiness?.Name</h4>
+                <img class="yelpImg" src="@currentBusiness?.image_url" alt="Business Image" />
+                <h4>@currentBusiness?.name</h4>
                 <p>@currentBusiness?.Location.FullAddress</p>
-                <p>@currentBusiness?.Phone</p>
-                <p>Rating: @currentBusiness?.Rating</p>
+                <p>@currentBusiness?.phone</p>
+                <p>Rating: @currentBusiness?.rating</p>
+                <p>Price: @currentBusiness?.price</p>
                 <button class="noBtn" @onclick="@(e => SwipeBusiness("no"))">No</button>
   
                 <button class="maybeBtn" @onclick="@(e => SwipeBusiness("maybe"))">Maybe</button>
@@ -83,6 +84,7 @@
             {
                 var result = await response.Content.ReadFromJsonAsync<YelpResponse>();
                 businesses = result?.Businesses;
+
                 foreach (var business in businesses)
                 {
                     business.Location = new Location
@@ -122,26 +124,30 @@
 
     private async void SwipeBusiness(string swipeResponse)
     {
-        Logger.LogInformation($"Swiped {swipeResponse} on {currentBusiness?.Name}");
+        Logger.LogInformation($"Swiped {swipeResponse} on {currentBusiness?.name}");
 
         if (swipeResponse.ToLower() == "yes")
         {
             string id = UserService.Id;
             User currentUser = await Db.Get<User>(id);
             currentUser.AddRestaurant(
-                new Restaurant(
-                    currentBusiness.Image_Url,
-                    currentBusiness.Name,
-                    currentBusiness.Phone,
-                    currentBusiness.Rating,
-                    currentBusiness.Location.FullAddress
-                )
+                new Restaurant
+                {
+                    image_url = currentBusiness.image_url,
+                    name = currentBusiness.name,
+                    phone = currentBusiness.phone,
+                    rating = currentBusiness.rating,
+                    review_count = currentBusiness.review_count,
+                    yelp_url = currentBusiness.yelp_url,
+                    price = currentBusiness.price,
+                    full_address = currentBusiness.Location.FullAddress
+                }
             );
             await Db.AddOrUpdate<User>(currentUser);
 
             if (currentBusiness != null)
             {
-                Navigation.NavigateTo($"/add-calendar?businessName={currentBusiness.Name}&phone={currentBusiness.Phone}&rating={currentBusiness.Rating}&imageUrl={currentBusiness.Image_Url}&address={currentBusiness.Location.FullAddress}");
+                Navigation.NavigateTo($"/add-calendar?businessName={currentBusiness.name}&phone={currentBusiness.phone}&rating={currentBusiness.rating}&imageUrl={currentBusiness.image_url}&address={currentBusiness.Location.FullAddress}");
             }
             else
             {
@@ -164,12 +170,16 @@
         }
     }
 
+
     private class Business
     {
-        public string Image_Url { get; set; }
-        public string Name { get; set; }
-        public string Phone { get; set; }
-        public double Rating { get; set; }
+        public string image_url { get; set; }
+        public string name { get; set; }
+        public string phone { get; set; }
+        public double rating { get; set; }
+        public int review_count { get; set; }
+        public string yelp_url { get; set; }
+        public string price { get; set; }
         public Location Location { get; set; }
     }
 

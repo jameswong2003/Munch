@@ -4,33 +4,48 @@ using Google.Cloud.Firestore;
 public class Restaurant {
     
     [FirestoreProperty]
-    public string Image_Url { get; set; }
+    public string image_url { get; set; }
 
     [FirestoreProperty]
-    public string Name { get; set; }
+    public string name { get; set; }
 
     [FirestoreProperty]
-    public string Phone { get; set; }
+    public string phone { get; set; }
 
     [FirestoreProperty]
-    public double Rating { get; set; }
+    public double rating { get; set; }
+    
+    [FirestoreProperty]
+    public int review_count { get; set; }
 
     [FirestoreProperty]
-    public string FullAddress { get; set; }
+    public string yelp_url { get; set; }
+
+    [FirestoreProperty]
+    public string price { get; set; }
+
+    [FirestoreProperty]
+    public string full_address { get; set; }
 
     public Restaurant() {
-        Image_Url = "";
-        Name = "";
-        Phone = "";
-        Rating = 0;
-        FullAddress = "";
+        image_url = "";
+        name = "";
+        phone = "";
+        rating = 0;
+        review_count = 0;
+        yelp_url = "";
+        price = "";
+        full_address = "";
     }
 
-    public Restaurant(string url, string name, string phone, double rating, string fullAddress) {
-        Image_Url = url;
-        Name = name;
-        Phone = phone;
-        Rating = rating;
-        FullAddress = fullAddress;
+    public Restaurant(string url, string name, string phone, double rating, int review_count, string yelp_url, string price, string fullAddress) {
+        image_url = url;
+        name = name;
+        phone = phone;
+        rating = rating;
+        review_count = review_count;
+        yelp_url = yelp_url;
+        price = price;
+        full_address = fullAddress;
     }
 }
