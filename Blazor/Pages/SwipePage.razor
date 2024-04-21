@@ -8,26 +8,27 @@
 @inject NavigationManager Navigation
 @inject FirestoreService Db
 @inject UserService UserService
+<link href="css/swipe.css" rel="stylesheet">
 
 <div class="background">
     <div class="container">
         <div class="swiper">
             @if (businesses == null || businesses.Count < 2)
             {
-                <p>Loading or insufficient businesses...</p>
+                <p>Loading businesseses in local area...</p>
             }
             else
             {
-               @foreach (var business in displayedBusinesses)
+                foreach (var business in displayedBusinesses)
                 {
                     <div class="card" @onclick="() => SwipeBusiness(business)">
-                        <img class="yelpImg" src="@business.image_url" alt="Business Image" />
-                        <h4>@business.name</h4>
+                        <img class="yelpImg img-radius" src="@business.image_url" alt="Business Image" style="max-height: 30vh;" />
+                        <h4 class="user-name">@business.name</h4>
                         <p>@business.Location.FullAddress</p>
-                        <p>Phone: @business.phone</p>
-                        <p>Rating: @business.rating <span>★</span></p>
-                        <p>Reviews: @business.review_count</p>
-                        <p>Price: @business.price</p>
+                        <p><div>Categories: @string.Join(", ", business.categories.Select(c => c.title))</div></p>
+                        <p>Price: @(string.IsNullOrEmpty(business.price) ? "N/A" : business.price)</p>
+                        <p>Rating: @business.rating <span>★</span> • Reviews: @(business.review_count == 0 ? "N/A" : business.review_count.ToString())</p>
+                        <p>Phone: @(string.IsNullOrEmpty(business.phone) ? "N/A" : business.phone)</p>
                     </div>
                 }
             }
@@ -56,27 +57,28 @@
         Logger.LogInformation("Fetching businesses...");
         try {
             var location = await JS.InvokeAsync<double[]>("getCoords");
-            var longitude = location[0];
-            var latitude = location[1];
-
-            Logger.LogInformation($"User's location: Latitude {latitude}, Longitude {longitude}");
-
             var httpClient = HttpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", System.Environment.GetEnvironmentVariable("YELP_API_BEARER_TOKEN"));
-            var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?latitude={latitude}&longitude={longitude}&limit=50");
+            var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?latitude={location[1]}&longitude={location[0]}&limit=50");
+
             if (response.IsSuccessStatusCode) {
                 var result = await response.Content.ReadFromJsonAsync<YelpResponse>();
-                businesses = result?.Businesses;
-                Logger.LogInformation($"Fetched {businesses?.Count ?? 0} businesses successfully.");
+                businesses = result?.Businesses.Select(b => {
+                    b.categories = b.categories.GroupBy(c => c.title).Select(g => g.First()).ToList(); // Remove duplicate categories
+                    return b;
+                }).ToList();
+
+                Logger.LogInformation($"Fetched {businesses.Count} businesses successfully.");
             } else {
                 Logger.LogWarning($"Failed to fetch businesses. Status code: {response.StatusCode}");
-                businesses = new List<Business>(); // Avoid null reference errors
+                businesses = new List<Business>();
             }
         } catch (Exception ex) {
             Logger.LogError(ex, "An error occurred while fetching businesses.");
-            businesses = new List<Business>(); // Ensure stability even on exceptions
+            businesses = new List<Business>();
         }
     }
+
 
     private void SetInitialBusinesses() {
         if (businesses != null && businesses.Count >= 2) {
@@ -115,7 +117,7 @@
                 return business;
             }
         }
-        return null; // or handle logic if all are displayed
+        return null; 
     }
 
     private async void AddToDatabase(Business business) {
@@ -139,7 +141,14 @@
         Navigation.NavigateTo(url);
     }
 
-    private class Business {
+        private class Category
+    {
+        public string alias { get; set; }
+        public string title { get; set; }
+    }
+
+    private class Business
+    {
         public string image_url { get; set; }
         public string name { get; set; }
         public string phone { get; set; }
@@ -147,15 +156,17 @@
         public int review_count { get; set; }
         public string yelp_url { get; set; }
         public string price { get; set; }
+        public List<Category> categories { get; set; }
         public Location Location { get; set; }
     }
+
 
     private class Location {
         public string Address1 { get; set; }
         public string City { get; set; }
         public string State { get; set; }
         public string Zip_Code { get; set; }
-        public string FullAddress { get; set; }
+        public string FullAddress => $"{Address1}, {City}, {State}, {Zip_Code}".TrimEnd(',', ' ');
     }
 
     private class YelpResponse {
