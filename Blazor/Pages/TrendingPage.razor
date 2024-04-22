@@ -81,5 +81,64 @@
         Logger.LogInformation($"User: {currentUser}");
     }
 
+    private class Business {
+        public string image_url { get; set; }
+        public string name { get; set; }
+        public string phone { get; set; }
+        public double rating { get; set; }
+        public int review_count { get; set; }
+        public string yelp_url { get; set; }
+        public string price { get; set; }
+        public Location Location { get; set; }
+    }
+
+    private List<Business>? trendingBusiness;
+
+    @*
+    Grab Trending restaurant
+    Use yelp and grab top 5 most review_count and the highest rated
+    *@
+    private async Task FetchBusiness() {
+        Logger.LogInformation("Fetching businesses...");
+
+        try {
+            var location = await JS.InvokeAsync<double[]>("getCoords");
+            var longitude = location[0];
+            var latitude = location[1];
+            
+            var httpClient = HttpClientFactory.CreateClient();
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", System.Environment.GetEnvironmentVariable("YELP_API_BEARER_TOKEN"));
+            var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?latitude={latitude}&longitude={longitude}&limit=20");
+
+            if (response.IsSuccessStatusCode) {
+                var result = await response.Content.ReadFromJsonAsync<YelpResponse>();
+                businesses = result?.Businesses;
+                
+                // Filter the businesses
+                if (businesses != null && businesses.Any()) {
+                    // Sort businesses by review count in descending order
+                    businesses = businesses.OrderByDescending(b => b.review_count).ToList();
+
+                    // Take the top 5 businesses with the highest review count
+                    businesses = businesses.Take(5).ToList();
+
+                    // Sort businesses by rating in descending order
+                    businesses = businesses.OrderByDescending(b => b.rating).ToList();
+
+                    // Take the top 5 businesses with the highest rating
+                    businesses = businesses.Take(5).ToList();
+
+                    Logger.LogInformation($"Fetched {businesses.Count} trending businesses successfully.");
+                } else {
+                    Logger.LogInformation("No businesses found.");
+                }
+
+            }
+
+        } catch (Exception ex) {
+            Logger.LogError(ex, "An error occured while fetching business>");
+            trendingBusiness = new List<Business>();
+        }
+    }
     
 }
