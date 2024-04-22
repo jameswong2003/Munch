@@ -1,5 +1,11 @@
 @page "/contact"
+@using MimeKit
+@using MimeKit.Text
+@using MailKit.Net.Smtp
 @layout MainLayout
+@inject UserService UserService
+@inject FirestoreService Db 
+
 <link href="css/contact.css" rel="stylesheet">
 
 <div id="container">
@@ -18,9 +24,9 @@
         <div class="subject">
             <InputSelect id="subject_input" @bind-Value="contactModel.Subject" class="input">
                 <option disabled selected>Subject line</option>
-                <option value="Project">I'd like to start a project</option>
-                <option value="Question">I'd like to ask a question</option>
-                <option value="Proposal">I'd like to make a proposal</option>
+                <option value="Bug">I'd like to report a bug</option>
+                <option value="Question">I'd like to ask a question about Munch</option>
+                <option value="Proposal">I'd like to make a proposal to improve Munch</option>
             </InputSelect>
         </div>
         <div class="message">
@@ -35,14 +41,43 @@
 @code {
     private ContactModel contactModel = new ContactModel();
 
+    protected override async Task OnInitializedAsync() {
+        string id = UserService.Id;
+        User currentUser = await Db.Get<User>(id);
+        contactModel.Name = currentUser.Name;
+        contactModel.Email = currentUser.Email;
+        
+    }
     private void HandleValidSubmit()
     {
-        Console.WriteLine("Form Submitted");
-        Console.WriteLine($"Name: {contactModel.Name}");
-        Console.WriteLine($"Email: {contactModel.Email}");
-        Console.WriteLine($"Telephone: {contactModel.Telephone}");
-        Console.WriteLine($"Subject: {contactModel.Subject}");
-        Console.WriteLine($"Message: {contactModel.Message}");
+
+        string emailAddress = "john.dubuque@ethereal.email";
+        string password = System.Environment.GetEnvironmentVariable("EMAIL_PASSWORD");
+
+        var email = new MimeMessage();
+        email.From.Add(MailboxAddress.Parse(emailAddress));
+        email.To.Add(MailboxAddress.Parse(emailAddress));
+        email.Subject = contactModel.Subject;
+
+        string emailContents = $@"
+        <h1>This was sent by the Munch application</h1>
+        <h4>From: {contactModel.Name}</h4>
+        <h4>Email: {contactModel.Email}</h4>
+        <h4>Phone: {contactModel.Telephone}</h4>
+
+        Message:
+        <p>{contactModel.Message}</p>
+
+        ";
+
+        email.Body = new TextPart(TextFormat.Html) { Text = emailContents };
+
+        using var smtpClient = new SmtpClient();
+        smtpClient.Connect("smtp.ethereal.email", 587, MailKit.Security.SecureSocketOptions.StartTls);
+        smtpClient.Authenticate(emailAddress, password);
+        smtpClient.Send(email);
+        smtpClient.Disconnect(true);
+
     }
 
     public class ContactModel
