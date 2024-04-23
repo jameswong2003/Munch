@@ -1,15 +1,20 @@
 @page "/trending"
+@using System.Net.Http
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
 @inject FirestoreService Db
 @inject ILogger<SwipePage> Logger
 @inject NavigationManager Navigation
 @inject UserService UserService
+@inject IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
 
 <link href="css/trending.css" rel="stylesheet">
 
 <h1 class="heading">Trending Restaurants</h1>
 
 <div class="card-container">
-    @foreach (var restaurant in pastRestaurants)
+    @* @foreach (var restaurant in pastRestaurants)
     {
         <div class="restaurant-card">
             <img src="@restaurant.ImageUrl" alt="@restaurant.Name" class="restaurant-image"/>
@@ -18,10 +23,26 @@
                 <p>@restaurant.Description</p>
             </div>
         </div>
+    } *@
+
+    @if (businessMap == null || businessMap.Count != 5) {
+        <p>Unable to load trending restaurants...</p>
+    } else {
+        foreach(var business in businessMap) {
+            <div class="restaurant-card">
+                <img class="yelpImg img-radius" src="@business.image_url" alt="Business Image" style="max-height: 30vh" />
+                <h4 class="user-name">@business.name</h4>
+                <p>@business.Location.FullAddress</p>
+                <p><div>Categories: @string.Join(", ", business.categories.Select(c => c.title))</div></p>
+                <p>Price: @(string.IsNullOrEmpty(business.price) ? "N/A" : business.price)</p>
+                <p>Rating: @business.rating <span>★</span> • Reviews: @(business.review_count == 0 ? "N/A" : business.review_count.ToString())</p>
+                <p>Phone: @(string.IsNullOrEmpty(business.phone) ? "N/A" : business.phone)</p>
+            </div>
+        }
     }
 </div>
 
-<h1 class="heading">Past Viewed Restaurants</h1>
+@* <h1 class="heading">Past Viewed Restaurants</h1>
 <div class="card-container">
     @foreach (var restaurant in pastRestaurants)
     {
@@ -33,7 +54,7 @@
             </div>
         </div>
     }
-</div>
+</div> *@
 
 @code {
     public class Restaurant
@@ -70,16 +91,95 @@
         string id = UserService.Id;
         CurrentUser = await Db.Get<User>(id);
         Logger.LogInformation($"Type of Liked Restaurants: {CurrentUser.LikedRestaurants.GetType()}, Count: {CurrentUser.LikedRestaurants.Count}");
+
+        await FetchBusinesses();
+        await SortBusiness();
     }
 
 
-    @* TODO Get Past Restaurants from firebase DB *@
-    private async void GetPastRestaurants()
+    private List<Business>? businesses;
+    @* Retrieve restaurants sort by most rated with highest rated *@
+    private async Task FetchBusinesses()
     {
-        string id = UserService.Id;
-        User currentUser = await Db.Get<User>(id);
-        Logger.LogInformation($"User: {currentUser}");
+        Logger.LogInformation("Fetching businesses...");
+        try {
+            var location = await JS.InvokeAsync<double[]>("getCoords");
+            var httpClient = HttpClientFactory.CreateClient();
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", System.Environment.GetEnvironmentVariable("YELP_API_BEARER_TOKEN"));
+            var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?latitude={location[1]}&longitude={location[0]}&limit=50");
+
+            if (response.IsSuccessStatusCode) {
+                var result = await response.Content.ReadFromJsonAsync<YelpResponse>();
+                businesses = result?.Businesses.Select(b => {
+                    b.categories = b.categories.GroupBy(c => c.title).Select(g => g.First()).ToList(); // Remove duplicate categories
+                    return b;
+                }).ToList();
+
+                Logger.LogInformation($"Fetched {businesses.Count} businesses successfully.");
+            } else {
+                Logger.LogWarning($"Failed to fetch businesses. Status code: {response.StatusCode}");
+                businesses = new List<Business>();
+            }
+        } catch (Exception ex) {
+            Logger.LogError(ex, "An error occurred while fetching businesses.");
+            businesses = new List<Business>();
+        }
+    }
+
+    @* Sort the business by their rating value and display top 5 most rated *@
+    private List<Business>? businessMap;
+    private async Task SortBusiness() {
+        Logger.LogInformation("Filtering & Sorting out Data");
+        try {
+            if (businesses == null) {
+                Logger.LogWarning("Business list is null. Refetch business");
+            }
+
+            if (businesses != null && businesses.Count > 0) {
+                var sortedByReviewCount = businesses.OrderByDescending(b => b.review_count).ToList();
+
+                var topRatedBusiness = sortedByReviewCount.Take(5).ToList();
+                businessMap = topRatedBusiness.OrderByDescending(b => b.rating).ToList();
+
+                Logger.LogInformation("Successfully filtered and sorted out businesses");
+            }
+        } catch (Exception ex) {
+            Logger.LogError(ex, "An error occured while filtering out data");
+            businessMap = new List<Business>();
+        }
     }
 
     
+
+    private class Category
+    {
+        public string alias { get; set; }
+        public string title { get; set; }
+    }
+
+    private class Business
+    {
+        public string image_url { get; set; }
+        public string name { get; set; }
+        public string phone { get; set; }
+        public double rating { get; set; }
+        public int review_count { get; set; }
+        public string yelp_url { get; set; }
+        public string price { get; set; }
+        public List<Category> categories { get; set; }
+        public Location Location { get; set; }
+    }
+
+
+    private class Location {
+        public string Address1 { get; set; }
+        public string City { get; set; }
+        public string State { get; set; }
+        public string Zip_Code { get; set; }
+        public string FullAddress => $"{Address1}, {City}, {State}, {Zip_Code}".TrimEnd(',', ' ');
+    }
+
+    private class YelpResponse {
+        public List<Business> Businesses { get; set; }
+    }
 }
