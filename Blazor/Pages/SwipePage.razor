@@ -11,11 +11,16 @@
 <link href="css/swipe.css" rel="stylesheet">
 
 <div class="background">
+    <div style="margin-top: 20px;">
+                <label for="categoryInput" style="color: white;">Enter your own category:</label>
+                <input id="categoryInput" type="text" @bind="userInputCategory" placeholder="Enter category..." />
+                <button @onclick="ApplyCategoryFilter">Apply</button>
+            </div>
     <div class="container">
         <div class="swiper">
             @if (businesses == null || businesses.Count < 2)
             {
-                <p>Loading businesseses in local area...</p>
+                <p>Loading businesses in local area...</p>
             }
             else
             {
@@ -34,6 +39,17 @@
             }
         </div>
     </div>
+    @if (showModal)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+        <div style="background-color: white; padding: 20px; border-radius: 10px;">
+            <p style="color: black">It has been 5 swipes!</p>
+            <button @onclick="AddToCalendar">Add to Calendar</button>
+            <button @onclick="ContinueSwiping">Continue Swiping</button>
+        </div>
+    </div>
+}
+
 </div>
 
 @code {
@@ -41,78 +57,136 @@
     private Business[] displayedBusinesses = new Business[2];
     private HashSet<Business> displayedSet = new HashSet<Business>();
     private int selectionCount = 0;
+    private Dictionary<string, int> categoryCounts = new Dictionary<string, int>();
+    private bool showModal = false;
+    private Business lastSwipedBusiness;
+    private string userInputCategory = "";
+
 
     protected override async Task OnInitializedAsync() {
-        @* Check if user is logged in *@
         if (!UserService.IsLoggedIn) {
             Navigation.NavigateTo("/");
         }
+        // Fetch user profile from the database
+        var user = await Db.Get<User>(UserService.Id);
 
+        // Check if user has any category counts
+        if (user.CategoryCounts.Count > 0)
+        {
+            // Find the category with the highest count
+            var highestCategory = user.CategoryCounts.OrderByDescending(kv => kv.Value).FirstOrDefault();
+            userInputCategory = highestCategory.Key;
+        }
+        categoryCounts.Clear();
         await FetchBusinesses();
         SetInitialBusinesses();
     }
 
-    protected override void OnAfterRender(bool firstRender) {
-        if (firstRender) {
+    private async Task ApplyCategoryFilter() {
+        if (!string.IsNullOrWhiteSpace(userInputCategory)) {
+            await FetchBusinessesByCategory(userInputCategory);
+            SetInitialBusinesses();
+        }
+    }
+    private async Task FetchBusinesses() {
+        var location = await JS.InvokeAsync<double[]>("getCoords");
+        var httpClient = HttpClientFactory.CreateClient();
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", System.Environment.GetEnvironmentVariable("YELP_API_BEARER_TOKEN"));
+        var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?latitude={location[1]}&longitude={location[0]}&limit=50");
+
+        if (response.IsSuccessStatusCode) {
+            var result = await response.Content.ReadFromJsonAsync<YelpResponse>();
+            businesses = result?.Businesses.Select(b => {
+                b.categories = b.categories.GroupBy(c => c.title).Select(g => g.First()).ToList(); // Remove duplicate categories
+                return b;
+            }).ToList();
+            SetInitialBusinesses();
+        } else {
+            Logger.LogWarning($"Failed to fetch businesses. Status code: {response.StatusCode}");
+        }
+    }
+
+    private async Task FetchBusinessesByCategory(string category, Business lastSwipedBusiness = null) {
+        var location = await JS.InvokeAsync<double[]>("getCoords");
+        var httpClient = HttpClientFactory.CreateClient();
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", System.Environment.GetEnvironmentVariable("YELP_API_BEARER_TOKEN"));
+        string url = $"https://api.yelp.com/v3/businesses/search?latitude={location[1]}&longitude={location[0]}&limit=50";
+
+        // Append category to URL if it is not empty.
+        if (!string.IsNullOrEmpty(category)) {
+            url += $"&categories={category}";
+        }
+
+        var response = await httpClient.GetAsync(url);
+
+        if (response.IsSuccessStatusCode) {
+            var result = await response.Content.ReadFromJsonAsync<YelpResponse>();
+            businesses = result?.Businesses.Select(b => {
+                b.categories = b.categories.GroupBy(c => c.title).Select(g => g.First()).ToList(); // Remove duplicate categories
+                return b;
+            }).ToList();
+
+            // Keep the last swiped business on screen if available.
+            if (lastSwipedBusiness != null) {
+                businesses.Insert(0, lastSwipedBusiness); // Ensure it's the first business displayed
+            }
+
+            SetInitialBusinesses();
+            StateHasChanged();
+
+        } else {
+            Logger.LogWarning($"Failed to fetch businesses with category '{category}'. Status code: {response.StatusCode}");
+        }
+    }
+
+    private void SetInitialBusinesses() {
+        if (businesses != null && businesses.Count >= 2) {
+            // Clear the displayedBusinesses to ensure it is updated with new businesses.
+            Array.Clear(displayedBusinesses, 0, displayedBusinesses.Length);
+
+            // Assign the first two businesses to be displayed.
+            displayedBusinesses[0] = businesses[0];
+            displayedBusinesses[1] = businesses[1];
+
+            // Clear the displayedSet and add the newly displayed businesses.
+            displayedSet.Clear(); 
+            displayedSet.Add(displayedBusinesses[0]);
+            displayedSet.Add(displayedBusinesses[1]);
+
+            // Trigger the UI to update.
             StateHasChanged();
         }
     }
 
-    private async Task FetchBusinesses() {
-        Logger.LogInformation("Fetching businesses...");
-        try {
-            var location = await JS.InvokeAsync<double[]>("getCoords");
-            var httpClient = HttpClientFactory.CreateClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", System.Environment.GetEnvironmentVariable("YELP_API_BEARER_TOKEN"));
-            var response = await httpClient.GetAsync($"https://api.yelp.com/v3/businesses/search?latitude={location[1]}&longitude={location[0]}&limit=50");
+    private void SwipeBusiness(Business business) {
+        Logger.LogInformation($"Selected: {business.name}, Categories: {string.Join(", ", business.categories.Select(c => c.title))}");
 
-            if (response.IsSuccessStatusCode) {
-                var result = await response.Content.ReadFromJsonAsync<YelpResponse>();
-                businesses = result?.Businesses.Select(b => {
-                    b.categories = b.categories.GroupBy(c => c.title).Select(g => g.First()).ToList(); // Remove duplicate categories
-                    return b;
-                }).ToList();
-
-                Logger.LogInformation($"Fetched {businesses.Count} businesses successfully.");
+        foreach (var category in business.categories) {
+            if (categoryCounts.ContainsKey(category.title)) {
+                categoryCounts[category.title]++;
             } else {
-                Logger.LogWarning($"Failed to fetch businesses. Status code: {response.StatusCode}");
-                businesses = new List<Business>();
+                categoryCounts.Add(category.title, 1);
             }
-        } catch (Exception ex) {
-            Logger.LogError(ex, "An error occurred while fetching businesses.");
-            businesses = new List<Business>();
-        }
-    }
-
-
-    private void SetInitialBusinesses() {
-        if (businesses != null && businesses.Count >= 2) {
-            displayedBusinesses[0] = businesses[0];
-            displayedBusinesses[1] = businesses[1];
-            displayedSet.Add(businesses[0]);
-            displayedSet.Add(businesses[1]);
-        }
-    }
-
-    private void SwipeBusiness(Business selectedBusiness) {
-        Logger.LogInformation($"Selected {selectedBusiness.name}");
-
-        // Update the set of displayed businesses
-        displayedSet.Add(selectedBusiness);
-
-        // Find the index of the non-selected business and replace it
-        int indexToReplace = Array.IndexOf(displayedBusinesses, selectedBusiness) == 0 ? 1 : 0;
-        Business nextBusiness = FindNextBusiness(selectedBusiness);
-
-        if (nextBusiness != null) {
-            displayedBusinesses[indexToReplace] = nextBusiness;
         }
 
         selectionCount++;
-        if (selectionCount == 5) { // After 5 selections, add to the database or handle end game
-            Logger.LogInformation($"Final selection: {selectedBusiness.name}. Adding to database...");
-            AddToDatabase(selectedBusiness);
-            NavigateToAddCalendar(selectedBusiness);
+        Logger.LogInformation($"Swipe Count: {selectionCount}");
+        lastSwipedBusiness = business;  // Save the last swiped business
+
+        if (selectionCount % 5 == 0) {
+            showModal = true;
+            Logger.LogInformation("Triggering modal display.");
+            StateHasChanged(); // Ensures UI updates to show modal
+        } else {
+            ReplaceBusiness(business);
+        }
+    }
+
+    private void ReplaceBusiness(Business current) {
+        int indexToReplace = Array.IndexOf(displayedBusinesses, current) == 0 ? 1 : 0;
+        Business nextBusiness = FindNextBusiness(current);
+        if (nextBusiness != null) {
+            displayedBusinesses[indexToReplace] = nextBusiness;
         }
     }
 
@@ -126,57 +200,84 @@
         return null; 
     }
 
-   private async void AddToDatabase(Business business) {
-    var user = await Db.Get<User>(UserService.Id); // Fetches the user correctly
-
-    // Check if the restaurant is already in the user's LikedRestaurants list
-    var existingRestaurant = user.LikedRestaurants.FirstOrDefault(r => r.name == business.name && r.full_address == business.Location.FullAddress);
-
-    if (existingRestaurant != null) {
-        // If it exists, increment the count
-        existingRestaurant.count++;
-        Logger.LogInformation($"Incremented count for {existingRestaurant.name}. New count: {existingRestaurant.count}");
-    } else {
-        // If it does not exist, add it with a count of 1
-        var newRestaurant = new Restaurant {
-            image_url = business.image_url,
-            name = business.name,
-            phone = business.phone,
-            rating = business.rating,
-            review_count = business.review_count,
-            yelp_url = business.yelp_url,
-            price = business.price,
-            full_address = business.Location.FullAddress,
-            count = 1 // Initial count set to 1
-        };
-        user.LikedRestaurants.Add(newRestaurant);
-        Logger.LogInformation($"Added new restaurant {newRestaurant.name} with initial count of 1.");
-    }
-
-    // Update category counts
-    foreach (var category in business.categories) {
-        if (user.CategoryCounts.ContainsKey(category.title)) {
-            user.CategoryCounts[category.title]++;
-        } else {
-            user.CategoryCounts.Add(category.title, 1);
+    private void AddToCalendar()
+    {
+        // Get the category of the selected business
+        var selectedBusiness = displayedBusinesses.FirstOrDefault(b => b == lastSwipedBusiness);
+        if (selectedBusiness != null)
+        {
+            var mostFrequentCategory = selectedBusiness.categories.OrderByDescending(c => categoryCounts.ContainsKey(c.title) ? categoryCounts[c.title] : 0).First().title;
+            AddToDatabase(selectedBusiness);
+            NavigateToAddCalendar(selectedBusiness);
         }
-        Logger.LogInformation($"Updated category count for {category.title}: {user.CategoryCounts[category.title]}");
     }
 
-    // Save changes to the database
-    await Db.AddOrUpdate<User>(user);
-}
 
+     private async void ContinueSwiping() {
+        showModal = false;
+        Logger.LogInformation("Continuing to swipe.");
 
-        private void NavigateToAddCalendar(Business business) {
+        // Use the last swiped business to fetch similar categories
+        if (lastSwipedBusiness != null) {
+            string categoriesToFetch = String.Join(",", lastSwipedBusiness.categories.Select(c => c.title));
+            Logger.LogInformation($"Fetching new businesses based on category/categories: {categoriesToFetch}");
+            await FetchBusinessesByCategory(categoriesToFetch, lastSwipedBusiness);
+        } else {
+            Logger.LogInformation("No last swiped business recorded; fetching general businesses.");
+            await FetchBusinesses();
+        }
+
+        StateHasChanged();  // Ensure the UI updates to reflect changes.
+    }
+
+    private void NavigateToAddCalendar(Business business) {
         Logger.LogInformation("Navigating to Add to Calendar page...");
         var url = $"/add-calendar?businessName={business.name}&phone={business.phone}&rating={business.rating}&imageUrl={business.image_url}&address={business.Location.FullAddress}&categories={string.Join(", ", business.categories.Select(c => c.title))}&price={business.price}";
         Navigation.NavigateTo(url);
     }
 
+    private async void AddToDatabase(Business business) {
+        var user = await Db.Get<User>(UserService.Id); // Fetches the user correctly
 
-        private class Category
-    {
+        // Check if the restaurant is already in the user's LikedRestaurants list
+        var existingRestaurant = user.LikedRestaurants.FirstOrDefault(r => r.name == business.name && r.full_address == business.Location.FullAddress);
+
+        if (existingRestaurant != null) {
+            // If it exists, increment the count
+            existingRestaurant.count++;
+            Logger.LogInformation($"Incremented count for {existingRestaurant.name}. New count: {existingRestaurant.count}");
+        } else {
+            // If it does not exist, add it with a count of 1
+            var newRestaurant = new Restaurant {
+                image_url = business.image_url,
+                name = business.name,
+                phone = business.phone,
+                rating = business.rating,
+                review_count = business.review_count,
+                yelp_url = business.yelp_url,
+                price = business.price,
+                full_address = business.Location.FullAddress,
+                count = 1 // Initial count set to 1
+            };
+            user.LikedRestaurants.Add(newRestaurant);
+            Logger.LogInformation($"Added new restaurant {newRestaurant.name} with initial count of 1.");
+        }
+
+        // Update category counts
+        foreach (var category in business.categories) {
+            if (user.CategoryCounts.ContainsKey(category.title)) {
+                user.CategoryCounts[category.title]++;
+            } else {
+                user.CategoryCounts.Add(category.title, 1);
+            }
+            Logger.LogInformation($"Updated category count for {category.title}: {user.CategoryCounts[category.title]}");
+        }
+
+        // Save changes to the database
+        await Db.AddOrUpdate<User>(user);
+    }
+
+    private class Category {
         public string alias { get; set; }
         public string title { get; set; }
     }
@@ -185,8 +286,8 @@
     {
         public string image_url { get; set; }
         public string name { get; set; }
-        public string phone { get; set; }
-        public double rating { get; set; }
+        public string phone { get; set; } 
+        public double rating { get; set; }  
         public int review_count { get; set; }
         public string yelp_url { get; set; }
         public string price { get; set; }
