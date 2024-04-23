@@ -1,15 +1,18 @@
 .heading {
     text-align: center;
-    color: #333;
+    color: #FFF; /* Pure white for headers */
     margin: 20px;
     font-size: 2rem;
 }
+
 body {
     font-family: 'Montserrat', Arial, sans-serif;
     -ms-text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
-    background: #E4D0FF;  
-  }
+    background: #333; /* Dark gray background for the whole page */
+    color: #FFF; /* Set body text to white for uniformity and contrast */
+}
+
 .card-container {
     display: flex;
     flex-wrap: wrap;
@@ -18,16 +21,18 @@ body {
 }
 
 .restaurant-card {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1); /* Subtle white shadow for depth */
     margin: 16px;
     width: calc(25% - 32px);
     overflow: hidden;
     border-radius: 8px;
     transition: transform 0.3s ease-in-out;
+    background-color: #444; /* Dark gray background for cards */
 }
 
 .restaurant-card:hover {
     transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(255, 255, 255, 0.2); /* Brighter white shadow on hover */
 }
 
 .restaurant-image {
@@ -38,17 +43,18 @@ body {
 
 .restaurant-info {
     padding: 15px;
-    background-color: #fff;
+    background-color: #333; /* Dark gray background for text area */
     font-family: 'Arial', sans-serif;
+    color: #FFF; /* Pure white text for all information content */
 }
 
 .restaurant-info h2 {
-    color: #333;
+    color: #FFF; /* Ensured titles are also pure white */
     margin-top: 0;
 }
 
 .restaurant-info p {
-    color: #666;
+    color: #FFF; /* Set paragraphs to white instead of light gray for stronger contrast */
     font-size: 1rem;
 }
 
