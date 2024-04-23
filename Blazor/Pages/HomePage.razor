@@ -12,7 +12,7 @@
         <div class="welcome-message">
             <h1>Welcome to Munch</h1>
             <p>Swipe towards delicious discoveries!</p>
-           <button class="swipe-animation" @onclick="NavigateToSwipePage">Start Swiping <span>&gt;&gt;</span></button>
+            <button class="swipe-animation" @onclick="NavigateToSwipePage">Start Swiping <span>&gt;&gt;</span></button>
         </div>
         <div class="profile-card">
             <div class="card-body">
@@ -21,12 +21,12 @@
                 </div>
                 <h5 class="user-name text-center">Hi, @CurrentUser.Name!</h5>
                 <div class="most-visited">
-                    <h6 class="mb-2 text-center">Most Visited Restaurants:</h6>
+                    <h6 class="mb-2 text-center">Most Matched Restaurants:</h6>
                     <ul class="list-unstyled text-center">
-                        <li>Chez Munch</li>
-                        <li>Sushi House</li>
-                        <li>The Pie Pizzeria</li>
-                        <li>Burger Barn</li>
+                        @foreach (var restaurant in CurrentUser.LikedRestaurants.OrderByDescending(r => r.count).Take(4))
+                        {
+                            <li>@restaurant.name - @restaurant.count times</li>
+                        }
                     </ul>
                 </div>
             </div>
@@ -40,7 +40,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        @* Check if user is logged in *@
+        // Check if user is logged in
         if (!UserService.IsLoggedIn) {
             Navigation.NavigateTo("/");
         }
@@ -55,9 +55,9 @@
             Console.WriteLine(ex.Message);           
         }
     }
+
     private void NavigateToSwipePage()
-        {
-            NavigationManager.NavigateTo("/swipe");
-        }
-    
+    {
+        NavigationManager.NavigateTo("/swipe");
+    }
 }
