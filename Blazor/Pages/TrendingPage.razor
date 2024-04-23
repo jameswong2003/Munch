@@ -14,24 +14,18 @@
 <h1 class="heading">Trending Restaurants</h1>
 
 <div class="card-container">
-    @* @foreach (var restaurant in pastRestaurants)
-    {
-        <div class="restaurant-card">
-            <img src="@restaurant.ImageUrl" alt="@restaurant.Name" class="restaurant-image"/>
-            <div class="restaurant-info">
-                <h2>@restaurant.Name</h2>
-                <p>@restaurant.Description</p>
-            </div>
-        </div>
-    } *@
 
     @if (businessMap == null || businessMap.Count != 5) {
         <p>Unable to load trending restaurants...</p>
     } else {
-        foreach(var business in businessMap) {
+
+        for (var i = 0; i < businessMap.Count; i++) {
+            var business = businessMap[i];
+            var index = i + 1;
+
             <div class="restaurant-card">
                 <img class="yelpImg img-radius" src="@business.image_url" alt="Business Image" style="max-height: 30vh" />
-                <h4 class="user-name">@business.name</h4>
+                <h4 class="user-name">@index. @business.name</h4>
                 <p>@business.Location.FullAddress</p>
                 <p><div>Categories: @string.Join(", ", business.categories.Select(c => c.title))</div></p>
                 <p>Price: @(string.IsNullOrEmpty(business.price) ? "N/A" : business.price)</p>
@@ -41,20 +35,6 @@
         }
     }
 </div>
-
-@* <h1 class="heading">Past Viewed Restaurants</h1>
-<div class="card-container">
-    @foreach (var restaurant in pastRestaurants)
-    {
-        <div class="restaurant-card">
-            <img src="@restaurant.ImageUrl" alt="@restaurant.Name" class="restaurant-image"/>
-            <div class="restaurant-info">
-                <h2>@restaurant.Name</h2>
-                <p>@restaurant.Description</p>
-            </div>
-        </div>
-    }
-</div> *@
 
 @code {
     public class Restaurant

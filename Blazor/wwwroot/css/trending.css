@@ -1,6 +1,6 @@
 .heading {
     text-align: center;
-    color: #333;
+    color: white;
     margin: 20px;
     font-size: 2rem;
 }
@@ -8,7 +8,7 @@ body {
     font-family: 'Montserrat', Arial, sans-serif;
     -ms-text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
-    background: #E4D0FF;  
+    background: #333;  
   }
 .card-container {
     display: flex;
@@ -24,6 +24,7 @@ body {
     overflow: hidden;
     border-radius: 8px;
     transition: transform 0.3s ease-in-out;
+    color: white;
 }
 
 .restaurant-card:hover {
@@ -42,15 +43,6 @@ body {
     font-family: 'Arial', sans-serif;
 }
 
-.restaurant-info h2 {
-    color: #333;
-    margin-top: 0;
-}
-
-.restaurant-info p {
-    color: #666;
-    font-size: 1rem;
-}
 
 @media (max-width: 768px) {
     .restaurant-card {
