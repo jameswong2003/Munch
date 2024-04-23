@@ -1,14 +1,13 @@
 @page "/add-calendar"
-@using Google.Apis.Auth.OAuth2;
-@using Google.Apis.Calendar.v3;
-@using Google.Apis.Calendar.v3.Data;
-@using Google.Apis.Services;
-@using Google.Apis.Util.Store;
-@using Microsoft.AspNetCore.Components;
-@using Microsoft.AspNetCore.WebUtilities;
+@using Google.Apis.Auth.OAuth2
+@using Google.Apis.Calendar.v3
+@using Google.Apis.Calendar.v3.Data
+@using Google.Apis.Services
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.WebUtilities
+@using System.Timers
 @inject NavigationManager Navigation
 @inject ScrapingService ScrapingService
-@using System.Timers;
 @inject UserService UserService
 
 <link href="css/addtocalendar.css" rel="stylesheet">
@@ -77,61 +76,49 @@ else
     {
         try
         {
-            string credPath = "credentials.json";
-
             DateTime dateTime = eventDate.Date + eventTime.TimeOfDay;
-
-            await AddEventToGoogleCalendar(dateTime, credPath);
+            await AddEventToGoogleCalendar(dateTime);
 
             isEventAdded = true;
-            StateHasChanged(); 
+            StateHasChanged(); // Trigger UI refresh
 
             // Start timer to hide the popup after 3 seconds
-            Timer timer = new Timer();
-            timer.Interval = 3000;
-            timer.Elapsed += (sender, e) =>
-            {
-                InvokeAsync(() =>
-                {
+            Timer timer = new Timer(3000);
+            timer.Elapsed += (sender, e) => {
+                InvokeAsync(() => {
                     isEventAdded = false;
                     StateHasChanged(); // Refresh UI to hide the popup
                 });
                 timer.Stop();
             };
             timer.Start();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("An error occurred: " + ex.Message);
-                }
-            }
-
-    private async Task AddEventToGoogleCalendar(DateTime dateTime, string credPath)
-    {
-        // Scopes for the Google Calendar API
-        string[] scopes = { CalendarService.Scope.Calendar };
-
-        // Initialize Google credential
-        UserCredential credential;
-        using (var stream = new FileStream(credPath, FileMode.Open, FileAccess.Read))
-        {
-            string tokenPath = "token.json";
-            credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                GoogleClientSecrets.Load(stream).Secrets,
-                scopes,
-                "user",
-                CancellationToken.None,
-                new FileDataStore(tokenPath, true));
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occurred: " + ex.Message);
+        }
+    }
 
-        // Initialize Google Calendar service
+    private async Task AddEventToGoogleCalendar(DateTime dateTime)
+    {
+        string[] scopes = { CalendarService.Scope.Calendar };
+        var clientSecrets = new ClientSecrets
+        {
+            ClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID"),
+            ClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET")
+        };
+
+        UserCredential credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+            clientSecrets,
+            scopes,
+            "user", CancellationToken.None);
+
         var service = new CalendarService(new BaseClientService.Initializer()
         {
             HttpClientInitializer = credential,
             ApplicationName = "Your Application Name"
         });
 
-        // Create new event
         Event newEvent = new Event
         {
             Summary = name,
@@ -148,12 +135,9 @@ else
             }
         };
 
-        // Add event to the user's primary calendar
         string calendarId = "primary";
         EventsResource.InsertRequest request = service.Events.Insert(newEvent, calendarId);
         Event createdEvent = await request.ExecuteAsync();
-
-        // Log the event ID
         Console.WriteLine("Event created: " + createdEvent.HtmlLink);
     }
 
@@ -162,22 +146,19 @@ else
         if (!UserService.IsLoggedIn) {
             Navigation.NavigateTo("/");
         }
-        
+
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
         var queryParams = QueryHelpers.ParseQuery(uri.Query);
-
         name = queryParams.TryGetValue("businessName", out var n) ? n.FirstOrDefault() : "";
         address = queryParams.TryGetValue("address", out var a) ? a.FirstOrDefault() : "";
         phone = queryParams.TryGetValue("phone", out var p) ? p.FirstOrDefault() : "";
         rating = queryParams.TryGetValue("rating", out var r) ? r.FirstOrDefault() : "";
         imageUrl = queryParams.TryGetValue("imageUrl", out var i) ? i.FirstOrDefault() : "";
-        categories = queryParams.TryGetValue("categories", out var c) ? c.FirstOrDefault() : ""; // Correct key for categories
-        price = queryParams.TryGetValue("price", out var pr) ? pr.FirstOrDefault() : ""; // Correct key for price
+        categories = queryParams.TryGetValue("categories", out var c) ? c.FirstOrDefault() : "";
+        price = queryParams.TryGetValue("price", out var pr) ? pr.FirstOrDefault() : "";
 
         scrapeResults = await ScrapingService.GetRestaurantUrl(name);
     }
-
-
 }
 
 <style>
