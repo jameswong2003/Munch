@@ -7,10 +7,10 @@
 @inject NavigationManager Navigation
 @inject UserService UserService
 
-
 <link href="css/calendar.css" rel="stylesheet">
 
-<h3>User's Calendar</h3>
+<h3>Your Calendar Calendar</h3>
+<h4>@currentMonthYear</h4>  <!-- Display the current month and year -->
 
 @if (!isAuthorized)
 {
@@ -20,32 +20,39 @@ else if (events == null)
 {
     <p>Loading...</p>
 }
-else if (!events.Any())
-{
-    <p>No events found.</p>
-}
 else
 {
-    <ul class="events-list">
-        @foreach (var evt in events)
+    <div class="calendar-grid">
+        @for (var date = startDate; date <= endDate; date = date.AddDays(1))
         {
-            <li>@evt.Summary - @evt.Start.DateTime?.ToString("MM/dd/yyyy HH:mm")</li>
+           <div class="day @(date.Date == DateTime.Today ? "today" : "")" style="border: 1px solid #ccc; padding: 10px; margin: 5px;">
+                <time>@date.ToString("dd MMM, ddd")</time> <!-- Showing date and day of the week -->
+                @if (eventsByDate.TryGetValue(date.Date, out var dayEvents))
+                {
+                    foreach (var evt in dayEvents)
+                    {
+                        <p>@evt.Summary - @evt.Start.DateTime?.ToString("HH:mm")</p>
+                    }
+                }
+            </div>
+
         }
-    </ul>
+    </div>
 }
 
 @code {
     private bool isAuthorized = false;
     private List<Event> events;
+    private Dictionary<DateTime, List<Event>> eventsByDate = new();
+    private DateTime startDate, endDate;
+    private string currentMonthYear;
 
     protected override async Task OnInitializedAsync()
     {
-        @* Check if user is logged in *@
         if (!UserService.IsLoggedIn) {
             Navigation.NavigateTo("/");
         }
 
-        @* Check for google calendar authorization *@
         await CheckAuthorization();
     }
 
@@ -54,29 +61,27 @@ else
         try
         {
             string clientId = System.Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
-
             string clientSecret = System.Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
 
-
             UserCredential credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                    new ClientSecrets
-                    {
-                        ClientId = clientId ,
-                        ClientSecret = clientSecret,
-                    },
-                    new[] { CalendarService.Scope.Calendar },
-                    "user", CancellationToken.None);
-
-                var service = new CalendarService(new BaseClientService.Initializer()
+                new ClientSecrets
                 {
-                    HttpClientInitializer = credential,
-                    ApplicationName = "Munch",
-                });
+                    ClientId = clientId,
+                    ClientSecret = clientSecret,
+                },
+                new[] { CalendarService.Scope.Calendar },
+                "user", CancellationToken.None);
 
+            var service = new CalendarService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = "Munch",
+            });
 
             EventsResource.ListRequest request = service.Events.List("primary");
-            request.TimeMin = DateTime.Today.AddDays(-DateTime.Today.Day + 1);
-            request.TimeMax = DateTime.Today.AddMonths(1).AddDays(-DateTime.Today.Day);
+            DateTime firstDayOfMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            request.TimeMin = firstDayOfMonth;
+            request.TimeMax = firstDayOfMonth.AddMonths(1).AddDays(-1);  // Direct use on a non-nullable DateTime
             request.ShowDeleted = false;
             request.SingleEvents = true;
             request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
@@ -84,6 +89,9 @@ else
             var result = await request.ExecuteAsync();
             events = result.Items.ToList();
             isAuthorized = true;
+            OrganizeEventsByDate();
+            CalculateMonthBounds();
+            currentMonthYear = firstDayOfMonth.ToString("MMMM yyyy");  // Set the current month and year
         }
         catch (Exception ex)
         {
@@ -91,4 +99,18 @@ else
         }
     }
 
+    private void OrganizeEventsByDate()
+    {
+        eventsByDate = events
+            .Where(e => e.Start.DateTime.HasValue) // Ensure that DateTime is not null
+            .GroupBy(e => e.Start.DateTime.Value.Date) // Safe to use Value here due to the previous check
+            .ToDictionary(g => g.Key, g => g.ToList());
+    }
+
+    private void CalculateMonthBounds()
+    {
+        var currentMonthFirstDay = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        startDate = currentMonthFirstDay.AddDays(-(int)currentMonthFirstDay.DayOfWeek);
+        endDate = currentMonthFirstDay.AddMonths(1).AddDays(-1);
+    }
 }
