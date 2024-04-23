@@ -11,6 +11,7 @@
 @using System.Timers;
 @inject UserService UserService
 
+<link href="css/addtocalendar.css" rel="stylesheet">
 
 <h3>Add to Calendar</h3>
 
@@ -19,8 +20,11 @@
     <div>
         <img src="@imageUrl" alt="Restaurant Image" />
         <h4>@name</h4>
-        <p>@phone</p>
+        <p>Phone: @phone</p>
         <p>Rating: @rating</p>
+        <p>Location: @address</p>
+        <p>Categories: @categories</p>
+        <p>Price: @price</p>
 
         @if (scrapeResults != null)
         {
@@ -62,6 +66,8 @@ else
     [Parameter] public string rating { get; set; }
     [Parameter] public string imageUrl { get; set; }
     [Parameter] public string address { get; set; }
+    [Parameter] public string categories { get; set; }
+    [Parameter] public string price { get; set; }
     public ScrapingService.ScrapingResults? scrapeResults = null;
     private DateTime eventDate = DateTime.Today;
     private DateTime eventTime = DateTime.Now;
@@ -153,7 +159,6 @@ else
 
     protected async override Task OnInitializedAsync()
     {
-        @* Check if user is logged in *@
         if (!UserService.IsLoggedIn) {
             Navigation.NavigateTo("/");
         }
@@ -166,10 +171,12 @@ else
         phone = queryParams.TryGetValue("phone", out var p) ? p.FirstOrDefault() : "";
         rating = queryParams.TryGetValue("rating", out var r) ? r.FirstOrDefault() : "";
         imageUrl = queryParams.TryGetValue("imageUrl", out var i) ? i.FirstOrDefault() : "";
+        categories = queryParams.TryGetValue("categories", out var c) ? c.FirstOrDefault() : ""; // Correct key for categories
+        price = queryParams.TryGetValue("price", out var pr) ? pr.FirstOrDefault() : ""; // Correct key for price
 
         scrapeResults = await ScrapingService.GetRestaurantUrl(name);
-
     }
+
 
 }
 
