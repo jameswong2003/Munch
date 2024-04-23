@@ -112,6 +112,7 @@
         if (selectionCount == 5) { // After 5 selections, add to the database or handle end game
             Logger.LogInformation($"Final selection: {selectedBusiness.name}. Adding to database...");
             AddToDatabase(selectedBusiness);
+            NavigateToAddCalendar(selectedBusiness);
         }
     }
 
@@ -125,9 +126,19 @@
         return null; 
     }
 
-    private async void AddToDatabase(Business business) {
-        var user = await Db.Get<User>(UserService.Id);
-        user.AddRestaurant(new Restaurant {
+   private async void AddToDatabase(Business business) {
+    var user = await Db.Get<User>(UserService.Id); // Fetches the user correctly
+
+    // Check if the restaurant is already in the user's LikedRestaurants list
+    var existingRestaurant = user.LikedRestaurants.FirstOrDefault(r => r.name == business.name && r.full_address == business.Location.FullAddress);
+
+    if (existingRestaurant != null) {
+        // If it exists, increment the count
+        existingRestaurant.count++;
+        Logger.LogInformation($"Incremented count for {existingRestaurant.name}. New count: {existingRestaurant.count}");
+    } else {
+        // If it does not exist, add it with a count of 1
+        var newRestaurant = new Restaurant {
             image_url = business.image_url,
             name = business.name,
             phone = business.phone,
@@ -135,16 +146,34 @@
             review_count = business.review_count,
             yelp_url = business.yelp_url,
             price = business.price,
-            full_address = business.Location.FullAddress
-        });
-        await Db.AddOrUpdate<User>(user);
-        NavigateToAddCalendar(business);
+            full_address = business.Location.FullAddress,
+            count = 1 // Initial count set to 1
+        };
+        user.LikedRestaurants.Add(newRestaurant);
+        Logger.LogInformation($"Added new restaurant {newRestaurant.name} with initial count of 1.");
     }
 
-    private void NavigateToAddCalendar(Business business) {
-        var url = $"/add-calendar?businessName={business.name}&phone={business.phone}&rating={business.rating}&imageUrl={business.image_url}&address={business.Location.FullAddress}";
+    // Update category counts
+    foreach (var category in business.categories) {
+        if (user.CategoryCounts.ContainsKey(category.title)) {
+            user.CategoryCounts[category.title]++;
+        } else {
+            user.CategoryCounts.Add(category.title, 1);
+        }
+        Logger.LogInformation($"Updated category count for {category.title}: {user.CategoryCounts[category.title]}");
+    }
+
+    // Save changes to the database
+    await Db.AddOrUpdate<User>(user);
+}
+
+
+        private void NavigateToAddCalendar(Business business) {
+        Logger.LogInformation("Navigating to Add to Calendar page...");
+        var url = $"/add-calendar?businessName={business.name}&phone={business.phone}&rating={business.rating}&imageUrl={business.image_url}&address={business.Location.FullAddress}&categories={string.Join(", ", business.categories.Select(c => c.title))}&price={business.price}";
         Navigation.NavigateTo(url);
     }
+
 
         private class Category
     {

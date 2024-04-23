@@ -27,25 +27,30 @@ public class Restaurant {
     [FirestoreProperty]
     public string full_address { get; set; }
 
+    [FirestoreProperty]
+    public int count { get; set; } // Tracks how many times the restaurant has been added
+
     public Restaurant() {
         image_url = "";
         name = "";
         phone = "";
-        rating = 0;
+        rating = 0.0;
         review_count = 0;
         yelp_url = "";
         price = "";
         full_address = "";
+        count = 0; // Initialize count to 0
     }
 
     public Restaurant(string url, string name, string phone, double rating, int review_count, string yelp_url, string price, string fullAddress) {
         image_url = url;
-        name = name;
-        phone = phone;
-        rating = rating;
-        review_count = review_count;
-        yelp_url = yelp_url;
-        price = price;
+        this.name = name;
+        this.phone = phone;
+        this.rating = rating;
+        this.review_count = review_count;
+        this.yelp_url = yelp_url;
+        this.price = price;
         full_address = fullAddress;
+        count = 1; // Initialize count to 1 when creating a new restaurant entry
     }
 }

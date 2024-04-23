@@ -9,13 +9,43 @@ body {
 /* Container styling for layout and alignment */
 .container {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-around;
-    height: 100vh;
-    padding: 10px;
+    justify-content: center; /* Center children horizontally */
+    align-items: center; /* Center children vertically */
+    height: 100vh; /* Full viewport height */
+    padding: 20px;
+}
+.modal {
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
 }
 
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    text-align: center;
+}
+
+button {
+    margin-top: 10px;
+}
+
+/* Swiper area that contains the cards */
+.swiper {
+    display: flex;
+    flex-wrap: wrap; /* Allows cards to wrap onto the next line */
+    justify-content: center; /* Center cards horizontally */
+    width: 100%; /* Full width to contain multiple cards side by side */
+    max-width: 1200px; /* Optional, depending on design requirements */
+}
 /* Card styling for individual items */
 .card {
     width: 90%;
