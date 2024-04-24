@@ -40,7 +40,7 @@
             var business = businessMap[i];
             var index = i + 1;
 
-            <div class="restaurant-card">
+            <div class="restaurant-card" @onclick="() => NavigateToCalendar(business)">
                 <img class="yelpImg img-radius" src="@business.image_url" alt="Business Image" style="max-height: 30vh" />
                 <h4 class="user-name">@index. @business.name</h4>
                 <p>@business.Location.FullAddress</p>
@@ -65,6 +65,14 @@
     private double latitude;
     private bool showLocationModal = true;
     private string inputLocation = "";
+
+    private void NavigateToCalendar(Business business)
+    {
+        var url = $"/add-calendar?businessName={business.name}&phone={business.phone}&rating={business.rating}&imageUrl={business.image_url}&address={business.Location.FullAddress}&categories={string.Join(", ", business.categories.Select(c => c.title))}&price={business.price}";
+        Navigation.NavigateTo(url);
+    }
+
+    
 
     private async Task UseCurrentLocation() 
     {
@@ -179,7 +187,7 @@
         }
     }
 
-    
+
 
     private class Category
     {
