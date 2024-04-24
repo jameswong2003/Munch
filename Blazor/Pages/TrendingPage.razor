@@ -40,7 +40,7 @@
             var business = businessMap[i];
             var index = i + 1;
 
-            <div class="restaurant-card" @onclick="() => NavigateToCalendar(business)">
+            <div class="restaurant-card" @onclick="async () => await NavigateToCalendar(business)">
                 <img class="yelpImg img-radius" src="@business.image_url" alt="Business Image" style="max-height: 30vh" />
                 <h4 class="user-name">@index. @business.name</h4>
                 <p>@business.Location.FullAddress</p>
@@ -54,25 +54,58 @@
 </div>
 
 @code {
-    public class Restaurant
-    {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string ImageUrl { get; set; }
-    }
-
     private double longitude;
     private double latitude;
     private bool showLocationModal = true;
     private string inputLocation = "";
 
-    private void NavigateToCalendar(Business business)
+    private async Task NavigateToCalendar(Business business)
     {
+        await AddToDatabase(business);
         var url = $"/add-calendar?businessName={business.name}&phone={business.phone}&rating={business.rating}&imageUrl={business.image_url}&address={business.Location.FullAddress}&categories={string.Join(", ", business.categories.Select(c => c.title))}&price={business.price}";
         Navigation.NavigateTo(url);
     }
 
-    
+    private async Task AddToDatabase(Business business) {
+        var user = await Db.Get<User>(UserService.Id); // Fetches the user correctly
+
+        // Check if the restaurant is already in the user's LikedRestaurants list
+        var existingRestaurant = user.LikedRestaurants.FirstOrDefault(r => r.name == business.name && r.full_address == business.Location.FullAddress);
+
+        if (existingRestaurant != null) {
+            // If it exists, increment the count
+            existingRestaurant.count++;
+            Logger.LogInformation($"Incremented count for {existingRestaurant.name}. New count: {existingRestaurant.count}");
+        } else {
+            // If it does not exist, add it with a count of 1
+            var newRestaurant = new Restaurant {
+                image_url = business.image_url,
+                name = business.name,
+                phone = business.phone,
+                rating = business.rating,
+                review_count = business.review_count,
+                yelp_url = business.yelp_url,
+                price = business.price,
+                full_address = business.Location.FullAddress,
+                count = 1 // Initial count set to 1
+            };
+            user.LikedRestaurants.Add(newRestaurant);
+            Logger.LogInformation($"Added new restaurant {newRestaurant.name} with initial count of 1.");
+        }
+
+        // Update category counts
+        foreach (var category in business.categories) {
+            if (user.CategoryCounts.ContainsKey(category.title)) {
+                user.CategoryCounts[category.title]++;
+            } else {
+                user.CategoryCounts.Add(category.title, 1);
+            }
+            Logger.LogInformation($"Updated category count for {category.title}: {user.CategoryCounts[category.title]}");
+        }
+
+        // Save changes to the database
+        await Db.AddOrUpdate<User>(user);
+    }
 
     private async Task UseCurrentLocation() 
     {
@@ -101,21 +134,6 @@
         await FetchBusinesses();
         await SortBusiness();
     }
-    private List<Restaurant> restaurants = new List<Restaurant>
-    {
-        new Restaurant { Name = "Chez Munch", Description = "A delightful mix of French and local cuisine.", ImageUrl = "images/chez-munch.jpg" },
-        new Restaurant { Name = "Sushi House", Description = "Authentic and inventive sushi creations.", ImageUrl = "images/sushi-house.jpg" },
-        new Restaurant { Name = "The Pie Pizzeria", Description = "Gourmet pizzas with a local twist.", ImageUrl = "images/pie-pizzeria.jpg" },
-        new Restaurant { Name = "Burger Barn", Description = "Home of the best burgers in town.", ImageUrl = "images/burger-barn.jpg" }
-    };
-
-    private List<Restaurant> pastRestaurants = new List<Restaurant>
-    {
-        new Restaurant { Name = "Chez Munch", Description = "A delightful mix of French and local cuisine.", ImageUrl = "images/chez-munch.jpg" },
-        new Restaurant { Name = "Sushi House", Description = "Authentic and inventive sushi creations.", ImageUrl = "images/sushi-house.jpg" },
-        new Restaurant { Name = "The Pie Pizzeria", Description = "Gourmet pizzas with a local twist.", ImageUrl = "images/pie-pizzeria.jpg" },
-        new Restaurant { Name = "Burger Barn", Description = "Home of the best burgers in town.", ImageUrl = "images/burger-barn.jpg" }
-    };
 
     User CurrentUser = new User();
     List<Restaurant> PastRestaurants = new List<Restaurant>{};
