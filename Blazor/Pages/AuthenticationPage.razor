@@ -89,11 +89,11 @@
         }
         catch (JSException ex)
         {
-            signupModel.ErrorMessage = $"JavaScript error during signup: {ex.Message}";
+            signupModel.ErrorMessage = "Error during sigup. Please try again.";
         }
         catch (Exception ex)
         {
-            signupModel.ErrorMessage = $"Unexpected error: {ex.Message}";
+            signupModel.ErrorMessage =  "Error during sigup. Please try again.";
         }
     }
 
@@ -119,11 +119,11 @@
         }
         catch (JSException ex)
         {
-            loginModel.ErrorMessage = $"JavaScript error during login: {ex.Message}";
+            loginModel.ErrorMessage = "Please try again with correct credentials.";
         }
         catch (Exception ex)
             {
-                loginModel.ErrorMessage = $"Unexpected error: {ex.Message}";
+                loginModel.ErrorMessage = "Please try again with correct credentials.";
             }
     }
 }
