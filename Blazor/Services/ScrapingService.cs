@@ -26,7 +26,8 @@ public class ScrapingService {
         var doc = new HtmlDocument();
         doc.LoadHtml(html);
 
-        string reservationXPath = "//div[contains(@class, \"kDxHqc M3hg4d\")]/a[@class=\"vsXl0d\"]";
+        // Old xpath: //div[contains(@class, \"kDxHqc M3hg4d\")]/a[@class=\"vsXl0d\"]
+        string reservationXPath = "//div[@class=\"LXiaI\"]/a[@class=\"K9ZSQ\" and ./button/span=\"Reserve a table\"]";
 
         var reservationElement = doc.DocumentNode.SelectSingleNode(reservationXPath);
 
@@ -34,6 +35,14 @@ public class ScrapingService {
 
         if (reservationElement != null) {
             result.ReservationURL = reservationElement.GetAttributeValue<string>("href", "");
+        }
+
+        string orderXPath = "//div[@class=\"LXiaI\"]/a[@class=\"K9ZSQ\" and ./button/span=\"Order online\"]";
+
+        var orderElement = doc.DocumentNode.SelectSingleNode(orderXPath);
+
+        if (orderElement != null) {
+            result.OrderURL = orderElement.GetAttributeValue<string>("href", "");
         }
 
         var websiteXPath = "//a[@jsname=\"UWckNb\"]";
@@ -50,7 +59,9 @@ public class ScrapingService {
     public class ScrapingResults {
 
         public string? ReservationURL { get; set; }
+        public string? OrderURL { get; set; }
         public string? RestaurantWebsiteURL { get; set; }
+        
 
         public ScrapingResults() {
             ReservationURL = null;
