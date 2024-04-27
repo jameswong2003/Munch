@@ -68,6 +68,16 @@
         </div>
     </div>
 }
+@if (showModal)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+        <div style="background-color: white; padding: 20px; border-radius: 10px;">
+            <p style="color: black">It has been 5 swipes!</p>
+            <button @onclick="AddToCalendar">Add to Calendar</button>
+            <button @onclick="ContinueSwiping">Continue Swiping</button>
+        </div>
+    </div>
+}
 
 </div>
 
