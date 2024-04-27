@@ -12,30 +12,123 @@ body {
     justify-content: center; /* Center children horizontally */
     align-items: center; /* Center children vertically */
     height: 100vh; /* Full viewport height */
-    padding: 20px;
-}
-.modal {
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
 }
 
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
+.apply-filter-button {
+    display: block;
+    width: 200px;
+    padding: 10px 20px;
+    margin: 20px auto; 
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.apply-filter-button:hover {
+    background-color: #0056b3;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5); /* Dimmed background */
+    z-index: 1000; /* High z-index to keep the modal above other content */
+}
+
+.selection-instruction {
     text-align: center;
+    font-size: 30px;
+    color: #ffffff;  
+    margin: 20px 0 10px 0;
+}
+.modal-content {
+    background-color: white; /* White background for the content area */
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%; /* Responsive width, adjust as necessary */
+    max-width: 500px; /* Maximum width to avoid overly large modals on big screens */
+    text-align: left; /* Align text to the left within the modal */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4); /* Subtle shadow for 3D effect */
+}
+.modal-content h4 {
+    text-align: center;
+    color: #333;
+}
+
+.modal-content div, .modal-content label {
+    margin-bottom: 5px; /* Adds space below each text element */
+}
+
+/* Styling specifically for the 'or' text to ensure it is centered and black */
+.modal-content .or-text {
+    text-align: center;
+    color: black;
+    margin: 20px 0; /* Added top and bottom margin for better separation */
+}
+
+/* Ensure all labels are black for consistency and readability */
+.modal-content label {
+    color: black; /* Ensures label text is black */
+}
+
+
+/* Styling specifically for the 'or' text to ensure it is centered and black */
+.modal-content .or-text {
+    text-align: center;
+    color: black;
+    margin: 20px 0; /* Added top and bottom margin for better separation */
+}
+
+/* Ensure all labels are black for consistency and readability */
+.modal-content label {
+    color: black; /* Ensures label text is black */
+}
+input[type="text"] {
+    width: 100%; /* Full width within modal */
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+.configure-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.configure-button:hover {
+    background-color: #0056b3;
 }
 
 button {
-    margin-top: 10px;
+    padding: 10px 20px;
+    margin-right: 10px;
+    border: none;
+    background-color: #007BFF;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
 }
 
 /* Swiper area that contains the cards */

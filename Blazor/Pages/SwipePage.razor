@@ -13,18 +13,12 @@
 <link href="css/swipe.css" rel="stylesheet">
 
 <div class="background">
-    <div style="margin-top: 20px;">
-                <label for="categoryInput" style="color: white;">Enter your own category:</label>
-                <input id="categoryInput" type="text" @bind="userInputCategory" placeholder="Enter category..." />
-                <button @onclick="ApplyCategoryFilter">Apply</button>
-            </div>
+      <h2 class="selection-instruction">
+           Make at least 5 selections to match with a delicious restaurant!
+        </h2>
     <div class="container">
         <div class="swiper">
-            @if (showLocationModal)
-            {
-                // Show nothing
-            }
-            else if (businesses == null || businesses.Count < 2)
+            @if (businesses == null || businesses.Count < 2)
             {
                 <p>Loading businesses in local area...</p>
             }
@@ -45,34 +39,35 @@
             }
         </div>
     </div>
-    @if (showModal)
+
+    <button @onclick="OpenLocationModal" class="configure-button">Configure Options</button>
+    
+@if (showLocationModal)
 {
-    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
-        <div style="background-color: white; padding: 20px; border-radius: 10px;">
-            <p style="color: black">It has been 5 swipes!</p>
-            <button @onclick="AddToCalendar">Add to Calendar</button>
-            <button @onclick="ContinueSwiping">Continue Swiping</button>
+    <div class="modal">
+        <div class="modal-content">
+            <h4>Configure Filters</h4>
+            <div>Choose where you want restaurants from:</div>
+            <button @onclick="UseCurrentLocation">Current Location</button>
+            <div class="or-text">or</div> <!-- Class added for specific styling -->
+
+            <label for="locationInput">Enter desired location:</label>
+            <input id="locationInput" type="text" @bind="inputLocation" placeholder="Input location..." />
+
+            <label for="categoryInput">Enter your own category:</label>
+            <input id="categoryInput" type="text" @bind="userInputCategory" placeholder="Leave me empty for a surprise..." />
+            <label for="priceSelect">Select Price:</label>
+            <select id="priceSelect" @bind="selectedPrice">
+                <option value="Any">Any</option>
+                <option value="1">$</option>
+                <option value="2">$$</option>
+                <option value="3">$$$</option>
+            </select>
+            
+            <button @onclick="ApplyFilter" class="apply-filter-button">Apply Filter</button>
         </div>
     </div>
 }
-
-    @if (showLocationModal)
-    {
-        
-        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; flex-direction: row;">
-            <div style="display: flex; flex-direction: column; align-items: flex-start">
-                <div>Choose where you want restaurants from:</div>
-            
-                <button @onclick="UseCurrentLocation">Current Location</button>
-            
-            
-                <label for="locationInput">Enter desired location</label>
-                <input id="locationInput" type="text" @bind="inputLocation" placeholder="Input location..." />
-                <button @onclick="UseInputLocation">Custom Location</button>
-            </div>
-            
-        </div>
-    }
 
 </div>
 
@@ -89,6 +84,7 @@
     private double longitude;
     private double latitude;
     private string inputLocation = "";
+    private string selectedPrice = "Any";
 
 
     protected override async Task OnInitializedAsync() {
@@ -110,17 +106,21 @@
         // SetInitialBusinesses();
     }
 
-    private async Task UseCurrentLocation() {
-        showLocationModal = false;
-
+   private async Task UseCurrentLocation() {
         double[] location = await JS.InvokeAsync<double[]>("getCoords");
 
         longitude = location[0];
         latitude = location[1];
 
-        await FetchBusinesses();
-        SetInitialBusinesses();
+        // Using reverse geocoding to get a human-readable address
+        string mapAPIKey = Environment.GetEnvironmentVariable("MICROSOFT_MAP_KEY");
+        IGeocoder geocoder = new BingMapsGeocoder(mapAPIKey);
+        IEnumerable<Address> addresses = await geocoder.ReverseGeocodeAsync(latitude, longitude);
+        inputLocation = addresses.FirstOrDefault()?.FormattedAddress; // Set the first found address to inputLocation
+
+        StateHasChanged(); // Refresh the UI to display the updated location
     }
+
 
     private async Task UseInputLocation() {
         showLocationModal = false;
@@ -136,12 +136,19 @@
         SetInitialBusinesses();
     }   
 
-    private async Task ApplyCategoryFilter() {
-        if (!string.IsNullOrWhiteSpace(userInputCategory)) {
-            await FetchBusinessesByCategory(userInputCategory);
-            SetInitialBusinesses();
+    private async Task ApplyFilter() {
+        if (!string.IsNullOrWhiteSpace(inputLocation)) {
+            await UseInputLocation(); // Use the custom location input to fetch businesses
         }
+        if (!string.IsNullOrWhiteSpace(userInputCategory) || selectedPrice != "Any") {
+            userInputCategory = userInputCategory.ToLower().Replace(" ", "");
+            string priceFilter = selectedPrice == "Any" ? "" : selectedPrice;
+            await FetchBusinessesByCategoryAndPrice(userInputCategory, priceFilter);
+        }
+        showLocationModal = false; // Close the modal after applying filters
+        StateHasChanged(); 
     }
+
     private async Task FetchBusinesses() {
         var httpClient = HttpClientFactory.CreateClient();
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", System.Environment.GetEnvironmentVariable("YELP_API_BEARER_TOKEN"));
@@ -159,15 +166,19 @@
         }
     }
 
-    private async Task FetchBusinessesByCategory(string category, Business lastSwipedBusiness = null) {
+    private async Task FetchBusinessesByCategoryAndPrice(string category, string price) {
         // var location = await JS.InvokeAsync<double[]>("getCoords");
         var httpClient = HttpClientFactory.CreateClient();
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", System.Environment.GetEnvironmentVariable("YELP_API_BEARER_TOKEN"));
-        string url = $"https://api.yelp.com/v3/businesses/search?latitude={latitude}&longitude={longitude}&limit=50";
+        string url = $"https://api.yelp.com/v3/businesses/search?sort_by=best_match&latitude={latitude}&longitude={longitude}&limit=50";
 
         // Append category to URL if it is not empty.
         if (!string.IsNullOrEmpty(category)) {
-            url += $"&categories={category}";
+        url += $"&categories={category}";
+        }
+        // only add if not Any input
+        if (selectedPrice != "Any") { 
+            url += $"&price={price}";
         }
 
         var response = await httpClient.GetAsync(url);
@@ -274,7 +285,6 @@
         if (lastSwipedBusiness != null) {
             string categoriesToFetch = String.Join(",", lastSwipedBusiness.categories.Select(c => c.title));
             Logger.LogInformation($"Fetching new businesses based on category/categories: {categoriesToFetch}");
-            await FetchBusinessesByCategory(categoriesToFetch, lastSwipedBusiness);
         } else {
             Logger.LogInformation("No last swiped business recorded; fetching general businesses.");
             await FetchBusinesses();
@@ -359,5 +369,10 @@
 
     private class YelpResponse {
         public List<Business> Businesses { get; set; }
+    }
+
+     private void OpenLocationModal()
+    {
+        showLocationModal = true;
     }
 }
