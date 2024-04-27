@@ -32,6 +32,11 @@
                 <p>Make a reservation <a href="@scrapeResults.ReservationURL" target="_blank">here</a></p>
             }
 
+            if (scrapeResults.OrderURL != null)
+            {
+                <p>Order online <a href="@scrapeResults.OrderURL" target="_blank">here</a></p>
+            }
+
             if (scrapeResults.RestaurantWebsiteURL != null)
             {
                 <p>Visit their website <a href="@scrapeResults.RestaurantWebsiteURL" target="_blank">here</a></p>
