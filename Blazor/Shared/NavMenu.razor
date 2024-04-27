@@ -29,12 +29,14 @@
                 <a class="nav-link" href="/contact">Contact Us</a>
             </li>
         </ul>
-@* 
-        @if (UserService.IsLoggedIn) {
-            <div class="nav-item mt-auto px-3">
-                <button class="btn btn-outline-danger" @onclick="Logout">Logout</button>
-            </div>
-        } *@
+      <ul class="navbar-nav ms-auto">
+            @if (UserService.IsLoggedIn)
+            {
+                <li class="nav-item">
+                    <button class="btn btn-outline-danger" @onclick="Logout">Logout</button>
+                </li>
+            }
+        </ul>
     </div>
 </nav>
 
