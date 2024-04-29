@@ -13,13 +13,13 @@
     <EditForm Model="@contactModel" OnValidSubmit="HandleValidSubmit">
         <DataAnnotationsValidator />
         <div class="name">
-            <InputText id="name_input" @bind-Value="contactModel.Name" class="input" placeholder="My name is" />
+            <InputText id="name_input" style="color:black;" @bind-Value="contactModel.Name" class="input" placeholder="My name is" />
         </div>
         <div class="email">
             <InputText id="email_input" type="email" @bind-Value="contactModel.Email" class="input" placeholder="My e-mail is" />
         </div>
         <div class="telephone">
-            <InputText id="telephone_input" @bind-Value="contactModel.Telephone" class="input" placeholder="My number is" />
+            <InputText id="telephone_input" style="color:black;" @bind-Value="contactModel.Telephone" class="input" placeholder="My number is" />
         </div>
         <div class="subject">
             <InputSelect id="subject_input" @bind-Value="contactModel.Subject" class="input">
