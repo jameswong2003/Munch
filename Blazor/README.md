@@ -14,4 +14,5 @@ The submission should have everything needed, with external dependencies already
     * Once the project is built, there should be a script file tucked away in the bin directory
     * With powershell installed, run `pwsh bin/Debug/net7.0/playwright.ps1 install`
     * If the following isn't working, this [link](https://playwright.dev/dotnet/docs/intro) should help
+    
 Once everything is installed, run `dotnet run` on the command line and open up localhost:5045 on your browser
