@@ -57,47 +57,50 @@ else
     }
 
     private async Task CheckAuthorization()
+{
+    try
     {
-        try
-        {
-            string clientId = System.Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
-            string clientSecret = System.Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
+        string clientId = System.Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+        string clientSecret = System.Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
 
-            UserCredential credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                new ClientSecrets
-                {
-                    ClientId = clientId,
-                    ClientSecret = clientSecret,
-                },
-                new[] { CalendarService.Scope.Calendar },
-                "user", CancellationToken.None);
-
-            var service = new CalendarService(new BaseClientService.Initializer()
+        UserCredential credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+            new ClientSecrets
             {
-                HttpClientInitializer = credential,
-                ApplicationName = "Munch",
-            });
+                ClientId = clientId,
+                ClientSecret = clientSecret,
+            },
+            new[] { CalendarService.Scope.Calendar },
+            "user", CancellationToken.None);
 
-            EventsResource.ListRequest request = service.Events.List("primary");
-            DateTime firstDayOfMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-            request.TimeMin = firstDayOfMonth;
-            request.TimeMax = firstDayOfMonth.AddMonths(1).AddDays(-1);  // Direct use on a non-nullable DateTime
-            request.ShowDeleted = false;
-            request.SingleEvents = true;
-            request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
-
-            var result = await request.ExecuteAsync();
-            events = result.Items.ToList();
-            isAuthorized = true;
-            OrganizeEventsByDate();
-            CalculateMonthBounds();
-            currentMonthYear = firstDayOfMonth.ToString("MMMM yyyy");  // Set the current month and year
-        }
-        catch (Exception ex)
+        var service = new CalendarService(new BaseClientService.Initializer()
         {
-            Console.WriteLine("Failed to retrieve calendar events: " + ex.Message);
-        }
+            HttpClientInitializer = credential,
+            ApplicationName = "Munch",
+        });
+
+        EventsResource.ListRequest request = service.Events.List("primary");
+        DateTime firstDayOfMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        DateTime lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+
+        request.TimeMin = firstDayOfMonth;
+        request.TimeMax = new DateTime(lastDayOfMonth.Year, lastDayOfMonth.Month, lastDayOfMonth.Day, 23, 59, 59); 
+
+        request.ShowDeleted = false;
+        request.SingleEvents = true;
+        request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
+
+        var result = await request.ExecuteAsync();
+        events = result.Items.ToList();
+        isAuthorized = true;
+        OrganizeEventsByDate();
+        CalculateMonthBounds();
+        currentMonthYear = firstDayOfMonth.ToString("MMMM yyyy");  // Set the current month and year
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Failed to retrieve calendar events: " + ex.Message);
+    }
+}
 
     private void OrganizeEventsByDate()
     {
