@@ -2,6 +2,18 @@
 
 ### Created by: Sean McCarty, Jeremy Bui, James Wong, Martin Brnak
 
+## Technologies:
+
+* [Playwright](https://playwright.dev/dotnet/) and [HTMLAgilityPack](https://html-agility-pack.net/) for webscraping
+* [Firebase](https://firebase.google.com/) OAuth and FirestoreDB
+* [GoogleCalendarAPI](https://developers.google.com/calendar/api/guides/overview)
+    * NOTE: When you first use the app and try to use your google to log in with google calendar, it will give you a warning. You can ignore this and press "advanced" and sign in anyways
+* [YelpAPI](https://docs.developer.yelp.com/docs/fusion-intro) for restaurant data
+* [MailKit](https://github.com/jstedfast/MailKit) for email server connection
+* [Geocoding.net](https://github.com/chadly/Geocoding.net) and [BingMaps](https://www.bingmapsportal.com/) for geocoding and reverse geocoding
+
+
+
 ## Installation:
 
 The submission should have everything needed, with external dependencies already installed in the zip file. However, if the web scraping isn't working, the grader should try the following:
