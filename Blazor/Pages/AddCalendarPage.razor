@@ -25,6 +25,7 @@
         <p>Categories: @categories</p>
         <p>Price: @price</p>
 
+        @* This condition checks if there are scraping results available, displaying relevant URLs if present. *@
         @if (scrapeResults != null)
         {
             if (scrapeResults.ReservationURL != null)

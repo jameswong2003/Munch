@@ -41,89 +41,109 @@
 </div>
 
 @code {
+    // Models for handling login and signup form data.
     LoginModel loginModel = new LoginModel();
     SignupModel signupModel = new SignupModel();
 
+    // Login form data structure.
     public class LoginModel
     {
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public string ErrorMessage { get; set; }
+        public string Email { get; set; } // Stores user's email.
+        public string Password { get; set; } // Stores user's password.
+        public string ErrorMessage { get; set; } // Stores error messages for login failures.
     }
 
+    // Signup form data structure.
     public class SignupModel
     {
-        public string Username { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public string ErrorMessage { get; set; }
-        public string Name { get; set; }
+        public string Username { get; set; } // Stores user's username.
+        public string Email { get; set; } // Stores user's email.
+        public string Password { get; set; } // Stores user's password.
+        public string ErrorMessage { get; set; } // Stores error messages for signup failures.
+        public string Name { get; set; } // Stores user's full name.
     }
 
+    // Response structure used to parse JSON responses from authentication functions.
     private class AuthResponse
     {
-        public bool Success { get; set; }
-        public string Error { get; set; }
+        public bool Success { get; set; } // Indicates success status of the authentication request.
+        public string Error { get; set; } // Stores error message from the authentication process.
     }
 
     private async Task HandleSignup()
     {
+        // Asynchronous function to handle user signup.
         try
         {
+            // Invokes the JavaScript function that integrates with Firebase to register a new user.
             var result = await JS.InvokeAsync<object>("firebaseAuth.signUp", signupModel.Email, signupModel.Password, signupModel.Username);
             var jsonData = System.Text.Json.JsonSerializer.Serialize(result);
             var responseObject = System.Text.Json.JsonSerializer.Deserialize<AuthResponse>(jsonData);
 
             if (string.IsNullOrEmpty(responseObject?.Error))
             {
+                // If signup is successful, fetch the current user ID from Firebase.
                 string id = await JS.InvokeAsync<string>("getCurrentUserId");
+                // Create a new User object and update database with the user's details.
                 var u = new User(id, signupModel.Name, signupModel.Email, signupModel.Username);
                 await Db.AddOrUpdate<User>(u);
-                UserService.Login(signupModel.Email, id); 
+                // Log the user in and redirect to the home page.
+                UserService.Login(signupModel.Email, id);
                 NavigationManager.NavigateTo("/home");
             }
             else
             {
+                // If an error is returned from the authentication service, update the error message in the model.
                 signupModel.ErrorMessage = responseObject.Error;
             }
         }
         catch (JSException ex)
         {
-            signupModel.ErrorMessage = "Error during sigup. Please try again.";
+            // Handle JavaScript runtime errors separately.
+            signupModel.ErrorMessage = "Error during signup. Please try again.";
         }
         catch (Exception ex)
         {
-            signupModel.ErrorMessage =  "Error during sigup. Please try again.";
+            // Catch-all for other exceptions that could occur during the signup process.
+            signupModel.ErrorMessage =  "Error during signup. Please try again.";
         }
     }
 
     private async Task HandleLogin()
     {
+        // Asynchronous function to handle user login.
         try
         {
+            // Invokes the JavaScript function that integrates with Firebase to authenticate a user.
             var result = await JS.InvokeAsync<object>("firebaseAuth.logIn", loginModel.Email, loginModel.Password);
             var jsonData = System.Text.Json.JsonSerializer.Serialize(result);
             var responseObject = System.Text.Json.JsonSerializer.Deserialize<AuthResponse>(jsonData);
 
             if (string.IsNullOrEmpty(responseObject?.Error))
             {
+                // If login is successful, fetch the current user ID from Firebase.
                 string id = await JS.InvokeAsync<string>("getCurrentUserId");
+                // Retrieve user details from the database.
                 var user = await Db.Get<User>(id);
-                UserService.Login(user.Email, id); 
+                // Log the user in and redirect to the home page.
+                UserService.Login(user.Email, id);
                 NavigationManager.NavigateTo("/home");
             }
             else
             {
+                // If an error is returned from the authentication service, update the error message in the model.
                 loginModel.ErrorMessage = responseObject?.Error ?? "Login failed. Please try again.";
             }
         }
         catch (JSException ex)
         {
+            // Handle JavaScript runtime errors separately, indicating possible issues with credentials.
             loginModel.ErrorMessage = "Please try again with correct credentials.";
         }
         catch (Exception ex)
-            {
-                loginModel.ErrorMessage = "Please try again with correct credentials.";
-            }
+        {
+            // Catch-all for other exceptions that could occur during the login process.
+            loginModel.ErrorMessage = "Please try again with correct credentials.";
+        }
     }
 }
